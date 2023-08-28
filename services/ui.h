@@ -15,12 +15,15 @@
 #include "../common.h"
 #include "../utils/string_ext.h"
 #include "users.h"
+#include "course.h"
 
 #define TITLE() system("title 课程信息系统 - " VERSION)
 
 User *GlobalUser;
+
 char *Serv_User_getUserRole(int role);
 
+void Serv_changePassword();
 
 
 /**
@@ -227,6 +230,49 @@ void UI_printChoices(char *msg, int *current) {
 
 
 /**
+ * 对传入的指令进行操作
+ * @param command
+ */
+void UI_doMainMenuActions(int command) {
+    switch (command) {
+        // 修改密码
+        case 5:
+        case 14:
+        case 23:
+            Serv_changePassword();
+            break;
+        // 退出登录
+        case 6:
+        case 15:
+        case 24:
+            GlobalUser = NULL;
+            longjmp(GLOBAL_goto_login, 1);
+        // 退出程序
+        case 7:
+        case 16:
+        case 25:
+            exit(0);
+        case 1:
+            printStudentCourseSelection();
+            break;
+        case 2:
+            printStudentLectureTable();
+            break;
+        case 3:
+        case 12:
+        case 21:
+            printAllCourses(0);
+            break;
+        case 11:
+            printAllCourses(1);
+            break;
+        default:
+            break;
+    }
+}
+
+
+/**
  * 按照权限输出主菜单模块
  * @param wrong_command 是否在先前输入过错误指令
  */
@@ -281,7 +327,7 @@ int UI_printMainMenu(char wrong_command) {
     int command = (int) command_raw[0];
     if (command >= '0' && command <= '9') {
         command += GlobalUser->role * 10 - '0';
-//        ui_doMainMenuActions(command);
+        UI_doMainMenuActions(command);
         goto init;
     } else {
         wrong_command = 1;
@@ -289,5 +335,24 @@ int UI_printMainMenu(char wrong_command) {
     }
 }
 
+
+/**
+ * 打开文件对话框
+ *
+ * @param path 最终返回路径
+ * @param fileType 文件类型，用\0分割，例如：All *.* Text *.TXT
+ * @return 1 - 成功 0 - 失败
+ */
+int openFileDialog(char *path, const char *fileType, char *title) {
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.lpstrFile = path;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFilter = fileType;
+    ofn.lpstrFileTitle = title;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    return GetOpenFileName(&ofn);
+}
 
 #endif //COURSESYSTEM2023_UI_H

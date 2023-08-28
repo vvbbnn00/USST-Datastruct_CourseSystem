@@ -16,7 +16,10 @@ configure_file(
         COPYONLY
 )
 
-add_executable(CourseSystem2023 main.c
+add_executable(CourseSystem2023
+        libs/link_list_object.c
+        libs/link_list_object.h
+        main.c
         models.h
         libs/hmacsha256.c
         libs/hmacsha256.h
@@ -29,7 +32,10 @@ add_executable(CourseSystem2023 main.c
         services/users.h
         utils/string_ext.h
         services/ui.h
-        database/courses.h)
+        database/courses.h
+        database/selections.h
+        utils/math_ext.h
+        services/course.h)
 
 
 # 为指定项目添加 include 路径

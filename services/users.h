@@ -190,4 +190,71 @@ int Serv_User_login(char status) {
 }
 
 
+/**
+ * 执行修改密码操作
+ */
+void Serv_changePassword() {
+    char *ori_password, *new_password, *new_password_repeat;
+
+    Init:
+
+    system("cls");
+    system("@echo off");
+    system("MODE CON COLS=55 LINES=30");
+
+    UI_printHeader(55);
+
+    printf("\n---- 修改密码 - （按\"esc\"键或不输入内容以返回） ----\n\n");
+    printf("用户名：%s\n", GlobalUser->empId);
+    printf("请输入原密码（按\"esc\"键或不输入内容以返回）：\n");
+    ori_password = Serv_User_getPassword(0);
+    if (strlen(ori_password) == 0) {
+        return;
+    }
+    // 设置标记点，若密码不符合规则，则跳回此处
+    EnterNewPassword:
+    printf("请输入新密码：\n");
+    printf("[密码强度提示] 密码中至少同时出现字母、数字、字符中的两种符号，长度在8-20位。\n");
+    new_password = Serv_User_getPassword(0);
+    if (strlen(new_password) == 0) {
+        return;
+    }
+    if (!regexMatch(PASSWD_PATTERN, new_password)) {
+        printf("密码强度不符合规则，请重新输入。\n\n");
+        goto EnterNewPassword;
+    }
+    printf("请再次输入新密码：\n");
+    new_password_repeat = Serv_User_getPassword(0);
+    if (strcmp(new_password_repeat, new_password) != 0) {
+        printf("两次密码输入不相同，请重新输入。\n\n");
+        goto EnterNewPassword;
+    }
+
+    char *hashPasswd = calcHexHMACSHA256(ori_password, SECRET_KEY);
+    char *hashNewPasswd = calcHexHMACSHA256(new_password, SECRET_KEY);
+    free(ori_password);
+    free(new_password);
+    free(new_password_repeat);
+    if (strcmp(hashPasswd, GlobalUser->passwd) != 0) {
+        printf("[系统提示] 修改密码失败：原密码不正确（按任意键重新输入）\n");
+        _getch();
+        goto Init;
+    }
+
+    if (strcmp(hashPasswd, hashNewPasswd) == 0) {
+        printf("[系统提示] 修改密码失败：新密码与原密码相同（按任意键重新输入）\n");
+        _getch();
+        goto Init;
+    }
+
+    free(hashPasswd);
+    strcpy(GlobalUser->passwd, hashNewPasswd);
+    DB_updateUser(GlobalUser);
+
+    printf("[系统提示] 密码修改成功（按任意键返回主菜单）。\n");
+    _getch();
+}
+
+
+
 #endif //COURSESYSTEM2023_USERS_SERVICE_H

@@ -235,9 +235,9 @@ void pbkdf2_sha256(HMAC_SHA256_CTX *hmac,
 }
 
 /**
- * 鐢熸垚16杩涘埗HMAC SHA256
- * @param content_ 鍐呭
- * @param secret_ 绉橀挜
+ * 生成16进制HMAC SHA256
+ * @param content_ 内容
+ * @param secret_ 秘钥
  * @return
  */
 char *calcHexHMACSHA256(const char *content_, const char *secret_) {
@@ -265,7 +265,7 @@ char *calcHexHMACSHA256(const char *content_, const char *secret_) {
 
     for (int i = 0; i < SHA256_DIGESTLEN; i++) {
         char tmp[3] = {0};
-        sprintf(tmp, "%02x", outdata[i]); // 闇�瑕佽ˉ闆讹紝涓庢湇鍔″櫒鍖归厤
+        sprintf(tmp, "%02x", outdata[i]); // 需要补零，与服务器匹配
         strcat(FINAL_STR, tmp);
     }
     return FINAL_STR;

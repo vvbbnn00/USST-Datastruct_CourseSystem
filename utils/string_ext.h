@@ -12,12 +12,12 @@
 #include <pcre2.h>
 
 /**
- * æ ¼å¼åŒ–æ—¶é—´
+ * ¸ñÊ½»¯Ê±¼ä
  *
  * %Y-%m-%d %H:%M:%S
  *
- * @param format æ ¼å¼
- * @param timestamp æ—¶é—´æˆ³
+ * @param format ¸ñÊ½
+ * @param timestamp Ê±¼ä´Á
  * @return
  */
 char *getFormatTimeString_(char *format, time_t timestamp) {
@@ -32,7 +32,7 @@ char *getFormatTimeString_(char *format, time_t timestamp) {
 
 
 /**
- * è·å–æ ¼å¼åŒ–æ—¶é—´
+ * »ñÈ¡¸ñÊ½»¯Ê±¼ä
  * @param timestamp
  * @return
  */
@@ -42,7 +42,7 @@ char *getFormatTimeString(time_t timestamp) {
 
 
 /**
- * å†…å­˜å®‰å…¨çš„gets
+ * ÄÚ´æ°²È«µÄgets
  *
  * @param str
  * @param num
@@ -58,10 +58,10 @@ void gets_safe(char *str, int num) {
 
 
 /**
- * åˆ¤æ–­æ­£åˆ™è¡¨è¾¾å¼æ˜¯å¦æ»¡è¶³æ¡ä»¶
- * @param pattern æ­£åˆ™è¡¨è¾¾å¼
- * @param string å¾…æµ‹å­—ç¬¦ä¸²
- * @return 0 - ä¸æ»¡è¶³ 1- æ»¡è¶³
+ * ÅĞ¶ÏÕıÔò±í´ïÊ½ÊÇ·ñÂú×ãÌõ¼ş
+ * @param pattern ÕıÔò±í´ïÊ½
+ * @param string ´ı²â×Ö·û´®
+ * @return 0 - ²»Âú×ã 1- Âú×ã
  */
 char regexMatch(char *pattern, char *string) {
     PCRE2_SIZE error_offset;

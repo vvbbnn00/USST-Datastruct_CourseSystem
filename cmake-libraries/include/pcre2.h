@@ -37,7 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*
- * 避大坑：PCRE2需要如下宏定义！！！
+ * �ܴ�ӣ�PCRE2��Ҫ���º궨�壡����
  */
 #define PCRE2_CODE_UNIT_WIDTH 8
 #define PCRE2_STATIC

@@ -21,7 +21,7 @@
 // 课程ID正则表达式（长度为5-30，由字母、数字和-组成的字符串，建议格式<学年>-<学期>-<课程代号>-<班级>）
 #define COURSE_ID_PATTERN "^[a-zA-z0-9-]{5,30}$"
 // 课程名称正则表达式（长度为5-50字符，由字母、数字、中文和()-组成的字符串）
-#define COURSE_TITLE_PATTERN "^[a-zA-Z0-9()（）\u4e00-\u9fa5-]{5,50}$"
+#define COURSE_TITLE_PATTERN "^[a-zA-Z0-9\(\)（）\u4e00-\u9fa5\-]{5,50}$"
 // 课程描述正则表达式（长度为 5-250 字符）
 #define COURSE_DESCRIPTION_PATTERN "^[\\D0-9]{5,250}$"
 // 课程类型正则表达式

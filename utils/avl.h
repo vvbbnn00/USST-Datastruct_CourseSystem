@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "../models.h"
+#include "math_ext.h"
 
 typedef struct IndexListNode {
     Index index;
@@ -48,11 +49,6 @@ int AVL_getHeight(AVLNode *node) {
         return 0;
     }
     return node->height;
-}
-
-// 获取两个整数的最大值
-int max(int a, int b) {
-    return (a > b) ? a : b;
 }
 
 // 右旋
@@ -255,6 +251,19 @@ IndexListNode *AVL_searchExact(AVLNode *root, int64_t hash) {
 }
 
 
+/**
+ * 获取AVL树中节点的数量
+ * @param root
+ * @return
+ */
+int64 AVL_countNodes(AVLNode *root) {
+    if (root == NULL) {
+        return 0;
+    }
+    return 1 + AVL_countNodes(root->left) + AVL_countNodes(root->right);
+}
+
+
 // 创建新的节点列表节点
 NodeList *NodeList_newNodeList(IndexListNode *indexNode) {
     NodeList *node = (NodeList *) malloc(sizeof(NodeList));
@@ -267,6 +276,29 @@ NodeList *NodeList_newNodeList(IndexListNode *indexNode) {
 
     return node;
 }
+
+
+void AVL_inOrderTraverse(AVLNode *root, NodeList **resultList) {
+    if (root == NULL) {
+        return;
+    }
+
+    AVL_inOrderTraverse(root->left, resultList);
+
+    NodeList *newNode = NodeList_newNodeList(root->list);
+    if (*resultList == NULL) {
+        *resultList = newNode;
+    } else {
+        NodeList *temp = *resultList;
+        while (temp->next) {
+            temp = temp->next;
+        }
+        temp->next = newNode;
+    }
+
+    AVL_inOrderTraverse(root->right, resultList);
+}
+
 
 // 中序遍历并在给定范围内查找节点
 void AVL_inOrderSearch(AVLNode *root, int64_t startHash, int64_t endHash, NodeList **resultList) {

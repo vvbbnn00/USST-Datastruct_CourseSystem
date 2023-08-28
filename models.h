@@ -6,67 +6,67 @@
 
 typedef long long int64;
 
-// ç”¨æˆ·ç±»å‹
+// ÓÃ»§ÀàĞÍ
 typedef struct {
-    int64 id;                  // ç”¨æˆ·ID
-    char name[21],             // ç”¨æˆ·å§“å
-    passwd[65],                // å¯†ç 
-    empId[21];                // å­¦å·¥å·
-    int role;                  // ç”¨æˆ·è§’è‰² 0-å­¦ç”Ÿ 1-æ•™å¸ˆ 2-ç®¡ç†å‘˜
-    char contact[201];         // è”ç³»æ–¹å¼
-    int64 lastLoginTime;     // æœ€åä¸€æ¬¡ç™»å½•æ—¶é—´æˆ³
+    int64 id;                  // ÓÃ»§ID
+    char name[21],             // ÓÃ»§ĞÕÃû
+    passwd[65],                // ÃÜÂë
+    empId[21];                // Ñ§¹¤ºÅ
+    int role;                  // ÓÃ»§½ÇÉ« 0-Ñ§Éú 1-½ÌÊ¦ 2-¹ÜÀíÔ±
+    char contact[201];         // ÁªÏµ·½Ê½
+    int64 lastLoginTime;     // ×îºóÒ»´ÎµÇÂ¼Ê±¼ä´Á
 } User;
 
-// è¯¾ç¨‹ç±»å‹
+// ¿Î³ÌÀàĞÍ
 typedef struct {
-    int64 id;                  // è¯¾ç¨‹ID/è¯¾ç¨‹å·
-    char courseName[101],     // è¯¾ç¨‹åç§°
-    description[501];          // è¯¾ç¨‹æè¿°
-    int64 teacherId;          // ä»»è¯¾è€å¸ˆID
-    User *teacher;             // ä»»è¯¾è€å¸ˆ
-    int type,                  // è¯¾ç¨‹ç±»å‹ï¼š0-å¿…ä¿® 1-é€‰ä¿® 2-å…¬é€‰ 3-è¾…ä¿®
-    weekStart,                // å¼€è¯¾å‘¨
-    weekEnd,                  // ç»“è¯¾å‘¨
-    currentMembers,           // å½“å‰æŠ¥åäººæ•°
-    maxMembers;               // æœ€å¤§å¯æŠ¥åäººæ•°
-    char location[101];        // ä¸Šè¯¾åœ°ç‚¹
-    double points;             // å­¦åˆ†
-    int schedule[7][13];       // æ¯æ˜ŸæœŸè¯¾ç¨‹å®‰æ’
+    int64 id;                  // ¿Î³ÌID/¿Î³ÌºÅ
+    char courseName[101],     // ¿Î³ÌÃû³Æ
+    description[501];          // ¿Î³ÌÃèÊö
+    int64 teacherId;          // ÈÎ¿ÎÀÏÊ¦ID
+    User *teacher;             // ÈÎ¿ÎÀÏÊ¦
+    int type,                  // ¿Î³ÌÀàĞÍ£º0-±ØĞŞ 1-Ñ¡ĞŞ 2-¹«Ñ¡ 3-¸¨ĞŞ
+    weekStart,                // ¿ª¿ÎÖÜ
+    weekEnd,                  // ½á¿ÎÖÜ
+    currentMembers,           // µ±Ç°±¨ÃûÈËÊı
+    maxMembers;               // ×î´ó¿É±¨ÃûÈËÊı
+    char location[101];        // ÉÏ¿ÎµØµã
+    double points;             // Ñ§·Ö
+    int schedule[7][13];       // Ã¿ĞÇÆÚ¿Î³Ì°²ÅÅ
 } Course;
 
-// é€‰è¯¾ç±»å‹
+// Ñ¡¿ÎÀàĞÍ
 typedef struct {
-    int64 id;                  // é€‰è¯¾ID
-    int64 studentId;          // å­¦ç”ŸID
-    User *student;             // å­¦ç”Ÿä¿¡æ¯
-    int64 courseId;           // è¯¾ç¨‹ID
-    Course *course;            // è¯¾ç¨‹ä¿¡æ¯
-    int64 selectionTime;      // é€‰æ‹©è¯¥è¯¾ç¨‹çš„æ—¶é—´
-    int64 score;               // æˆç»©
+    int64 id;                  // Ñ¡¿ÎID
+    int64 studentId;          // Ñ§ÉúID
+    User *student;             // Ñ§ÉúĞÅÏ¢
+    int64 courseId;           // ¿Î³ÌID
+    Course *course;            // ¿Î³ÌĞÅÏ¢
+    int64 selectionTime;      // Ñ¡Ôñ¸Ã¿Î³ÌµÄÊ±¼ä
+    int64 score;               // ³É¼¨
 } CourseSelection;
 
-// é€‰è¯¾äº¤äº’ç±»å‹
+// Ñ¡¿Î½»»¥ÀàĞÍ
 typedef struct {
-    int status;                // æ˜¯å¦å¯é€‰è¯¥é—¨è¯¾ç¨‹
-    char lockedReason[100];   // è¯¥é—¨è¯¾ä¸èƒ½é€‰æ‹©çš„åŸå› 
-    int64 selectionTime;      // é€‰æ‹©è¯¥è¯¾ç¨‹çš„æ—¶é—´
-    Course *course;            // è¯¾ç¨‹ä¿¡æ¯
+    int status;                // ÊÇ·ñ¿ÉÑ¡¸ÃÃÅ¿Î³Ì
+    char lockedReason[100];   // ¸ÃÃÅ¿Î²»ÄÜÑ¡ÔñµÄÔ­Òò
+    int64 selectionTime;      // Ñ¡Ôñ¸Ã¿Î³ÌµÄÊ±¼ä
+    Course *course;            // ¿Î³ÌĞÅÏ¢
 } CourseSelectionInteraction;
 
 
-// ç´¢å¼•ç±»å‹å®šä¹‰
+// Ë÷ÒıÀàĞÍ¶¨Òå
 typedef enum {
     INDEX_TYPE_INT64,
     INDEX_TYPE_STRING,
     INDEX_TYPE_OBJECT
 } IndexType;
 
-// ç´¢å¼•å®šä¹‰
+// Ë÷Òı¶¨Òå
 typedef struct {
     int64 hash;
     IndexType type;
     void *data;
-    struct IndexListNode *next; // ç”¨äºå¤„ç†é‡å¤å…³é”®å­—
+    struct IndexListNode *next; // ÓÃÓÚ´¦ÀíÖØ¸´¹Ø¼ü×Ö
 } Index;
 
 #endif

@@ -15,14 +15,15 @@
 #include "../utils/hash.h"
 #include "../utils/wubi.h"
 #include "database.h"
+#include "selections.h"
 
 int64 AUTO_INCREMENT_USER_ID = 1;   // 自增的用户ID
 
 AVLNode *user_ID_Index = NULL;      // 用户ID索引，将用户信息缓存到内存中，每次启动重新构建
+AVLNode *user_file_Index = NULL;    // 用户文件索引，从文件中读取
 AVLNode *user_name_Index = NULL;    // 用户姓名索引，从文件中读取
 AVLNode *user_empId_Index = NULL;   // 用户工号索引，从文件中读取
 
-void DB_saveAutoIncrement();
 
 /**
  * 根据ID获取用户
@@ -103,6 +104,7 @@ void DB_saveUser(User *user) {
 void DB_saveUserIndex() {
     AVL_saveToFile(user_name_Index, "data/index/user_name.avl");
     AVL_saveToFile(user_empId_Index, "data/index/user_empId.avl");
+    AVL_saveToFile(user_file_Index, "data/index/user_file.avl");
     DB_saveAutoIncrement();
 }
 
@@ -134,10 +136,11 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
     strcpy(user->contact, contact);
     user->lastLoginTime = 0;
     DB_saveUser(user);
+    user_file_Index = AVL_insertNode(user_file_Index, user->id, INDEX_TYPE_OBJECT, 0);
     user_name_Index = AVL_insertNode(user_name_Index, Hash_String(Wubi_chn2wubi(name)), INDEX_TYPE_INT64,
                                      (void *) user->id);
     user_empId_Index = AVL_insertNode(user_empId_Index, Hash_String(empId), INDEX_TYPE_INT64, (void *) user->id);
-    user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_OBJECT, user);
+    user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_INT64, user);
     DB_saveUserIndex();
     return user;
 }
@@ -151,5 +154,45 @@ void DB_updateUser(User *user) {
     DB_saveUser(user);
     DB_saveUserIndex();
 }
+
+
+/**
+ * 删除用户
+ * @param userId
+ */
+void DB_deleteUser(int64 userId) {
+    User *user = DB_getUserById(userId);
+    if (user == NULL) {
+        printf("[deleteUser] 用户不存在\n");
+        return;
+    }
+
+    // 若是学生，删除选课记录
+    if (user->role == 0) {
+        // 删除用户的选课记录
+        IndexListNode *list = DB_getSelectionsByUserId(user->id);
+        for (IndexListNode *p = list; p != NULL; p = p->next) {
+            DB_withdrawCourse(user->id, ((CourseSelection *) p->index.data)->courseId);
+        }
+    }
+
+    // 若是教师，删除课程
+    if (user->role == 1) {
+        IndexListNode *list = DB_getCoursesByTeacherId(user->id);
+        for (IndexListNode *p = list; p != NULL; p = p->next) {
+            DB_deleteCourse(((Course *) p->index.data)->id);
+        }
+    }
+
+    user_name_Index = AVL_deleteNode(user_name_Index, Hash_String(Wubi_chn2wubi(user->name)));
+    user_empId_Index = AVL_deleteNode(user_empId_Index, Hash_String(user->empId));
+    user_ID_Index = AVL_deleteNode(user_ID_Index, user->id);
+    user_file_Index = AVL_deleteNode(user_file_Index, user->id);
+    char *filePath = calloc(100, sizeof(char));
+    sprintf(filePath, "data/user/%lld.dat", user->id);
+    remove(filePath);
+    DB_saveUserIndex();
+}
+
 
 #endif //COURSESYSTEM2023_USERS_H
