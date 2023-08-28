@@ -263,6 +263,9 @@ void UI_doMainMenuActions(int command) {
         case 21:
             printAllCourses(0);
             break;
+        case 4:
+            printStudentScoreTable();
+            break;
         case 11:
             printAllCourses(1);
             break;

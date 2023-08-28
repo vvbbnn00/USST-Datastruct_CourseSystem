@@ -31,7 +31,7 @@ AVLNode *user_empId_Index = NULL;   // 用户工号索引，从文件中读取
  * @return
  */
 User *DB_getUserById(int64 userId) {
-    IndexListNode *node = AVL_searchExact(user_ID_Index, userId);
+    IndexListNode *node = NULL; // AVL_searchExact(user_ID_Index, userId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
         char *filePath = calloc(100, sizeof(char));
@@ -45,7 +45,7 @@ User *DB_getUserById(int64 userId) {
         fread(user, sizeof(User), 1, fp);
         fclose(fp);
         // 插入索引
-        user_ID_Index = AVL_insertNode(user_ID_Index, userId, INDEX_TYPE_OBJECT, user);
+        // user_ID_Index = AVL_insertNode(user_ID_Index, userId, INDEX_TYPE_OBJECT, user);
         return user;
     }
     return (User *) node->index.data;

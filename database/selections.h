@@ -55,7 +55,7 @@ CourseSelection *DB_getSelectionById(int64 selectionId) {
         selection->student = DB_getUserById(selection->studentId);
         selection->course = DB_getCourseById(selection->courseId);
         // 插入索引
-        selection_ID_Index = AVL_insertNode(selection_ID_Index, selectionId, INDEX_TYPE_OBJECT, selection);
+        // selection_ID_Index = AVL_insertNode(selection_ID_Index, selectionId, INDEX_TYPE_OBJECT, selection);
         return selection;
     }
     return (CourseSelection *) node->index.data;
@@ -140,6 +140,9 @@ char __checkHaveTime(IndexListNode* courses, Course *course){
     CourseTime table[7][13] = {0};
     for (IndexListNode *n = courses; n!=NULL; n=n->next){
         CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
+        if (selection == NULL) {
+            continue;
+        }
         Course *c = selection->course;
         if (c == NULL) {
             continue;
@@ -292,9 +295,9 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
     for (IndexListNode *n = node2; n != NULL; n = n->next) {
         if (n->index.data == (void *) selection->id) {
             if (n->next) {
-                n->index = node->next->index;
-                n->next = node->next->next;
-                free(node->next);
+                n->index = n->next->index;
+                n->next = n->next->next;
+                free(n->next);
             } else {
                 // 退课后该课程无其他选课
                 selection_courseId_Index = AVL_deleteNode(selection_courseId_Index, courseId);

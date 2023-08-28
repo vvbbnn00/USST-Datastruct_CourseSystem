@@ -337,27 +337,35 @@ NodeList *AVL_findNodesInRange(AVLNode *root, int64_t startHash, int64_t endHash
 // 递归地将AVL树写入文件
 void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
     if (node == NULL) {
-        int64_t nullMarker = INT64_MIN;
-        fwrite(&nullMarker, sizeof(int64_t), 1, file);
+        int64 nullMarker = INT64_MIN;
+        fwrite(&nullMarker, sizeof(int64), 1, file);
         return;
     }
 
     // 写入当前节点的哈希值
-    fwrite(&node->list->index.hash, sizeof(int64_t), 1, file);
+    fwrite(&node->list->index.hash, sizeof(int64), 1, file);
+    int64 continueMarker = INT64_MIN + 1;
     // 判断IndexType并写入
     switch (node->list->index.type) {
         case INDEX_TYPE_INT64: {
             // printf("写入节点0：%lld\n", node->list->index.hash);
             fwrite("0", sizeof(char), 1, file); // IndexType = 0
-            fwrite(&node->list->index.data, sizeof(int64_t), 1, file);
+            // 将List中的Index转换为int64_t并写入
+            for (IndexListNode *p = node->list; p != NULL; p = p->next) {
+                fwrite(&p->index.data, sizeof(int64), 1, file);
+                if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
+            }
             break;
         }
         case INDEX_TYPE_STRING: {
             // printf("写入节点1：%lld\n", node->list->index.hash);
             int64 len = (int64) strlen(node->list->index.data);
             fwrite("1", sizeof(char), 1, file); // IndexType = 1
-            fwrite(&len, sizeof(int64_t), 1, file); // 写入字符串长度
-            fwrite(node->list->index.data, sizeof(char), len, file);
+            for (IndexListNode *p = node->list; p != NULL; p = p->next) {
+                fwrite(&len, sizeof(int64_t), 1, file); // 写入字符串长度
+                fwrite(p->index.data, sizeof(char), len, file);
+                if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
+            }
             break;
         }
         case INDEX_TYPE_OBJECT:
@@ -396,33 +404,51 @@ AVLNode *AVL_loadFromFileHelper(FILE *file) {
     fread(&type, sizeof(char), 1, file);
     void *data;
 
-    switch (type) {
-        case '0': {
-            fread(&data, sizeof(int64_t), 1, file);
-            indexType = INDEX_TYPE_INT64;
-            break;
-        }
-        case '1': {
-            int64 len;
-            indexType = INDEX_TYPE_STRING;
-            fread(&len, sizeof(int64_t), 1, file);
-            char *data1 = calloc(len + 1, sizeof(char));
-            fread(data1, sizeof(char), len, file);
-            data = data1;
-            break;
-        }
-        default: {
-            printf("[AVL] Invalid IndexType.\n");
-            return NULL;
-        }
-    }
-
     AVLNode *node = (AVLNode *) malloc(sizeof(AVLNode));
     if (!node) {
         perror("[AVL] Failed to allocate memory for AVLNode");
         return NULL;
     }
-    node->list = Index_newIndexListNode(hash, indexType, data);
+
+    do {
+        switch (type) {
+            case '0': {
+                fread(&data, sizeof(int64_t), 1, file);
+                indexType = INDEX_TYPE_INT64;
+                break;
+            }
+            case '1': {
+                int64 len;
+                indexType = INDEX_TYPE_STRING;
+                fread(&len, sizeof(int64_t), 1, file);
+                char *data1 = calloc(len + 1, sizeof(char));
+                fread(data1, sizeof(char), len, file);
+                data = data1;
+                break;
+            }
+            default: {
+                printf("[AVL] Invalid IndexType.\n");
+                return NULL;
+            }
+        }
+        if (node->list == NULL) {
+            node->list = Index_newIndexListNode(hash, indexType, data);
+        } else {
+            IndexListNode *newNode = Index_newIndexListNode(hash, indexType, data);
+            newNode->next = node->list;
+            node->list = newNode;
+        }
+        int64 signal;
+        fread(&signal, sizeof(int64_t), 1, file);
+        if (signal == INT64_MIN + 1) {
+            continue;
+        } else {
+            // 回退一个int64_t
+            fseek(file, -8, SEEK_CUR);
+            break;
+        }
+    } while (1);
+
     node->left = AVL_loadFromFileHelper(file);
     node->right = AVL_loadFromFileHelper(file);
 

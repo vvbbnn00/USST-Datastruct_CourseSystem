@@ -53,8 +53,15 @@ Course *DB_getCourseById(int64 courseId) {
         fread(course, sizeof(Course), 1, fp);
         fclose(fp);
         course->teacher = DB_getUserById(course->teacherId);
+
+        IndexListNode *selections = DB_getSelectionsByCourseId(courseId);
+        course->currentMembers = 0;
+        for (IndexListNode *p = selections; p != NULL; p = p->next) {
+            course->currentMembers++;
+        }
+
         // ²åÈëË÷Òı
-        course_ID_Index = AVL_insertNode(course_ID_Index, courseId, INDEX_TYPE_OBJECT, course);
+        // course_ID_Index = AVL_insertNode(course_ID_Index, courseId, INDEX_TYPE_OBJECT, course);
         return course;
     }
     return (Course *) node->index.data;

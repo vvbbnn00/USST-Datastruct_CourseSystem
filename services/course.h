@@ -169,6 +169,7 @@ void printStudentCourseSelection() {
     LinkList_Object *course_data_list = NULL;
 
     GetCourseAndDisplay:
+    current_score = 0;
     // ... 请求过程
     printf("[提示] 正在请求...\n");
 
@@ -178,8 +179,6 @@ void printStudentCourseSelection() {
     } else {
         result = DB_getAllCourses();
     }
-
-    total = page = current_total = max_page = page_size = -1;
 
     if (result == NULL) {
         printf("[提示] 无法获取课程数据\n");
@@ -216,6 +215,7 @@ void printStudentCourseSelection() {
         if (selection != NULL) {
             tmp->status = 1;
             tmp->selection_time = selection->selectionTime;
+            current_score += course_data_pt->points;
         }
 
         tmp->course = *course_data_pt;
@@ -421,6 +421,83 @@ void printTableToStream(FILE *_stream, LinkList_Object scheduleList[7][13]) {
 
 
 /**
+ * 输出学生成绩表，并展示于控制台
+ */
+void printStudentScoreTable() {
+    system("chcp 936>nul & cls & MODE CON COLS=80 LINES=100"); // 这里行数一定要大，不然数据会被刷掉
+
+    int total; // 总结果条数
+    double score_total; // 总学分
+    LinkList_Object *scheduleList = linkListObject_Init(); // 解析后的课表数据放在这里，对应节次等信息[7]表示周一(0)至周日(6)，[13]表示第一节课(1)至第十二节课(12)
+
+    // ... 请求过程
+    printf("[提示] 正在请求...\n");
+
+    IndexListNode *courseSelections = DB_getSelectionsByUserId(GlobalUser->id);
+
+    // 解析课程数据
+    for (IndexListNode *n = courseSelections; n != NULL; n = n->next) {
+        CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
+        if (selection == NULL) continue;
+        Course *course_data_pt = selection->course;
+        score_total += course_data_pt->points;
+
+        linkListObject_Append(scheduleList, selection);
+    }
+
+    Refresh:
+
+    system("cls");
+    printf("\n");
+    UI_printHeader(76);
+    printf("\n");
+    UI_printInMiddle("======= 课程·成绩查询 =======\n", 77);
+    printf("%-16s%-35s%-15s%-10s\n", "课程ID", "课程名称", "课程学分", "成绩");
+    printf("--------------------------------------------------------------------------\n");
+    for (LinkList_Node *pt = scheduleList->head; pt != NULL; pt = pt->next) {
+        CourseSelection *selection = pt->data;
+        Course *course_data_pt = selection->course;
+
+        // 成绩按照条件显示
+        char *showScore;
+        if (selection->score < 0) {
+            showScore = "未录入";
+        } else {
+            showScore = calloc(10, sizeof(char));
+            showScore = lltoa(selection->score, showScore, 10);
+        }
+
+        printf("%-16lld%-35s%-15.2f%-10s\n",
+               course_data_pt->id,
+               course_data_pt->courseName,
+               course_data_pt->points,
+               showScore);
+    }
+    printf("\n");
+    UI_printInMiddle("=============================\n", 77);
+    printf("\n    [学生姓名] %s  [已选学分] %.2f\n",
+           GlobalUser->name,
+           score_total);
+    printf("\n\t <Esc>返回主菜单\n\n");
+
+    int keyboard_press;
+
+    GetKey:
+    keyboard_press = _getch();
+    switch (keyboard_press) {
+        case 27:
+            goto GC_Collect;
+        default:
+            break;
+    }
+    goto GetKey;
+
+    GC_Collect:
+    linkListObject_Delete(scheduleList, 0);
+}
+
+
+/**
  * 输出学生课表，并展示于控制台
  */
 void printStudentLectureTable() {
@@ -431,29 +508,31 @@ void printStudentLectureTable() {
     LinkList_Object scheduleList[7][13] = {0}; // 解析后的课表数据放在这里，对应节次等信息[7]表示周一(0)至周日(6)，[13]表示第一节课(1)至第十二节课(12)
 
     // ... 请求过程
-    printf("[提示] 正在请求服务器...\n");
-    // TODO
+    printf("[提示] 正在请求...\n");
+
+    IndexListNode *courseSelections = DB_getSelectionsByUserId(GlobalUser->id);
 
     // 解析课程数据
-//    cJSON *data = cJSON_GetObjectItem(ret_json, "data");
-//    for (int i = 0; i < total; i++) {
-//        cJSON *row_data = cJSON_GetArrayItem(data, i);
-//        Course *course_data_pt = alloca(sizeof(Course));
-//        if (parseCourseData(row_data, course_data_pt)) return;
-//        for (int week = 0; week < 7; week++) {
-//            int continuous = 0; // 判断是否是连续的课程安排，如果是 则算在一起，不重复添加在课表中
-//            for (int seq = 1; seq <= 12; seq++) {
-//                if (course_data_pt->schedule[week][seq]) {  // 该时段有课
-//                    if (!continuous) {
-//                        linkListObject_Append(&scheduleList[week][seq], course_data_pt); // 将课程加入进去
-//                        continuous = 1; // 重复，flag激活
-//                    }
-//                } else {
-//                    continuous = 0; // 遇到一个不重复的，则flag重置
-//                }
-//            }
-//        }
-//    }
+    for (IndexListNode *n = courseSelections; n != NULL; n = n->next) {
+        CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
+        if (selection == NULL) continue;
+        Course *course_data_pt = selection->course;
+        score_total += course_data_pt->points;
+
+        for (int week = 0; week < 7; week++) {
+            int continuous = 0; // 判断是否是连续的课程安排，如果是 则算在一起，不重复添加在课表中
+            for (int seq = 1; seq <= 12; seq++) {
+                if (course_data_pt->schedule[week][seq]) {  // 该时段有课
+                    if (!continuous) {
+                        linkListObject_Append(&scheduleList[week][seq], course_data_pt); // 将课程加入进去
+                        continuous = 1; // 重复，flag激活
+                    }
+                } else {
+                    continuous = 0; // 遇到一个不重复的，则flag重置
+                }
+            }
+        }
+    }
 
     Refresh:
 
@@ -486,7 +565,6 @@ void printStudentLectureTable() {
             char file_name[len];
             memset(file_name, 0, len);
             sprintf(file_name, "%s的课表_%s.txt", name, timestamp);
-            free(name);
             free(timestamp);
             FILE *file = fopen(file_name, "w");
             printf("[提示] 正在将课表导出至：%s...\n", file_name);

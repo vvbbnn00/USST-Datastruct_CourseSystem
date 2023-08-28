@@ -31,7 +31,7 @@ int main() {
     }
     system("pause");
 
-    GlobalUser = DB_getUserByEmpId("2135060620");
+    GlobalUser = DB_getUserByEmpId(ADMIN_USERNAME);
 
     // ´òÓ¡Ö÷²Ëµ¥
     UI_printMainMenu(0);
