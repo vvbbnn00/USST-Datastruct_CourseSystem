@@ -310,6 +310,8 @@ void AVL_inOrderSearch(AVLNode *root, int64_t startHash, int64_t endHash, NodeLi
 
     // 检查当前节点的哈希值是否在给定范围内
     if (root->list->index.hash >= startHash && root->list->index.hash <= endHash) {
+        // printf("找到节点：%lld\n", root->list->index.hash);
+        // system("pause");
         NodeList *newNode = NodeList_newNodeList(root->list);
         if (*resultList == NULL) {
             *resultList = newNode;

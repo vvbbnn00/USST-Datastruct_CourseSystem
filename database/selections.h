@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <io.h>
+#include <time.h>
 #include "../common.h"
 #include "../utils/avl.h"
 #include "../utils/hash.h"
@@ -38,7 +39,7 @@ typedef struct courseTime {
  * @return
  */
 CourseSelection *DB_getSelectionById(int64 selectionId) {
-    IndexListNode *node = AVL_searchExact(selection_ID_Index, selectionId);
+    IndexListNode *node = NULL; // AVL_searchExact(selection_ID_Index, selectionId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
         char *filePath = calloc(100, sizeof(char));
@@ -82,6 +83,22 @@ IndexListNode *DB_getSelectionsByCourseId(int64 courseId) {
 }
 
 /**
+ * 根据用户ID和课程ID获取选课
+ * @param userId
+ * @param courseId
+ * @return
+ */
+CourseSelection *DB_getSelectionByUserIdAndCourseId(int64 userId, int64 courseId) {
+    char *string = calloc(100, sizeof(char));
+    sprintf(string, "%llda%lld", userId, courseId);
+    IndexListNode *node = AVL_searchExact(selection_userId_courseId_Index, Hash_String(string));
+    if (node == NULL) {
+        return NULL;
+    }
+    return DB_getSelectionById((int64) node->index.data);
+}
+
+/**
  * 保存选课信息
  * @param selection
  */
@@ -114,12 +131,19 @@ void DB_saveSelectionIndex() {
  * @return
  */
 char __checkHaveTime(IndexListNode* courses, Course *course){
-    if (courses == NULL) {
+    if (course == NULL) {
         return 0;
+    }
+    if (courses == NULL) {
+        return 1;
     }
     CourseTime table[7][13] = {0};
     for (IndexListNode *n = courses; n!=NULL; n=n->next){
-        Course *c = (Course *) n->index.data;
+        CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
+        Course *c = selection->course;
+        if (c == NULL) {
+            continue;
+        }
         for (int i = 0; i < 7; i++) {
             for (int j = 0; j < 13; j++) {
                 if (c->schedule[i][j] == 1) {
@@ -161,6 +185,7 @@ CourseSelection *DB_selectCourse(int64 userId, int64 courseId) {
     }
 
     // 检查课程是否存在
+    // printf("[DB_selectCourse] courseId = %lld\n", courseId);
     Course *course = DB_getCourseById(courseId);
     if (course == NULL) {
         printf("[DB_selectCourse] 课程不存在\n");
@@ -172,6 +197,14 @@ CourseSelection *DB_selectCourse(int64 userId, int64 courseId) {
         printf("[DB_selectCourse] 课程已满员\n");
         return NULL;
     }
+
+    // 检查是否有时间冲突
+    IndexListNode *courses = DB_getSelectionsByUserId(userId);
+    if (!__checkHaveTime(courses, course)) {
+        printf("[DB_selectCourse] 选课时间存在冲突\n");
+        return NULL;
+    }
+
 
     User *student = DB_getUserById(userId);
     if (student == NULL) {
@@ -191,16 +224,17 @@ CourseSelection *DB_selectCourse(int64 userId, int64 courseId) {
     selection->studentId = userId;
     selection->courseId = courseId;
     selection->score = -1;
+    selection->selectionTime = time(NULL);
     DB_saveSelection(selection);
 
     // 插入索引
     selection_ID_Index = AVL_insertNode(selection_ID_Index, selection->id, INDEX_TYPE_OBJECT, selection);
     selection_userId_courseId_Index = AVL_insertNode(selection_userId_courseId_Index, Hash_String(string),
-                                                     INDEX_TYPE_OBJECT, selection);
+                                                     INDEX_TYPE_INT64, (void *) selection->id);
     selection_userId_Index = AVL_insertNode(selection_userId_Index, userId, INDEX_TYPE_INT64, (void *) selection->id);
     selection_courseId_Index = AVL_insertNode(selection_courseId_Index, courseId, INDEX_TYPE_INT64,
                                               (void *) selection->id);
-    selection_file_Index = AVL_insertNode(selection_file_Index, selection->id, INDEX_TYPE_INT64, 0);
+    selection_file_Index = AVL_insertNode(selection_file_Index, selection->id, INDEX_TYPE_INT64, (void *) selection->id);
 
     // 更新课程信息
     course->currentMembers++;
@@ -228,21 +262,23 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
     }
 
     // 退课
-    CourseSelection *selection = (CourseSelection *) node->index.data;
+    CourseSelection *selection = DB_getSelectionById((int64) node->index.data);
+    if (selection == NULL) {
+        printf("[DB_withdrawCourse] 选课记录不存在\n");
+        return NULL;
+    }
     selection_ID_Index = AVL_deleteNode(selection_ID_Index, selection->id);
     selection_courseId_Index = AVL_deleteNode(selection_courseId_Index, courseId);
     char *filePath = calloc(100, sizeof(char));
-    sprintf(filePath, "data/selection/%lld.dat", selection->id);
-    remove(filePath);
 
     // 更新索引 - userId
     IndexListNode *node1 = AVL_searchExact(selection_userId_Index, userId);
     for (IndexListNode *n = node1; n != NULL; n = n->next) {
         if (n->index.data == (void *) selection->id) {
             if (n->next) {
-                n->index = node->next->index;
-                n->next = node->next->next;
-                free(node->next);
+                n->index = n->next->index;
+                n->next = n->next->next;
+                free(n->next);
             } else {
                 // 退课后该用户无其他选课
                 selection_userId_Index = AVL_deleteNode(selection_userId_Index, userId);
@@ -276,11 +312,26 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
     // 更新课程信息
     Course *course = DB_getCourseById(courseId);
     course->currentMembers--;
+
+    sprintf(filePath, "data/selection/%lld.dat", selection->id);
+    remove(filePath);
     DB_saveCourse(course);
 
     DB_saveSelectionIndex();
 
     return selection;
+}
+
+
+char DB_updateSelectionScore(int64 selectionId, int score) {
+    CourseSelection *selection = DB_getSelectionById(selectionId);
+    if (selection == NULL) {
+        printf("[DB_updateSelectionScore] 选课记录不存在\n");
+        return 0;
+    }
+    selection->score = score;
+    DB_saveSelection(selection);
+    return 1;
 }
 
 

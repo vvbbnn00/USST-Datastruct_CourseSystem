@@ -40,6 +40,8 @@ struct teacherCourseSelection { // 学生选课管理结构体
     User student; // 学生信息
     Course course; // 课程信息
     long long selection_time; // 选择该课程的时间
+    int64 score; // 该门课程的成绩
+    int64 id; // 选课ID
 };
 
 
@@ -160,8 +162,7 @@ void printStudentCourseSelection() {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     char search_kw[36] = "";
-    double max_score = 0, current_score = 0; // 本学期最多可选学分, 当前已选学分
-    int sort_method = 0; // 排序方法 0 - 默认排序 1 - 学分降序 2 - 学分升序
+    double current_score = 0; // 本学期最多可选学分, 当前已选学分
     int total, page = 1, max_page, page_size = 10, current_total;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
@@ -171,11 +172,58 @@ void printStudentCourseSelection() {
     // ... 请求过程
     printf("[提示] 正在请求...\n");
 
+    NodeList *result;
+    if (strlen(search_kw) > 0) {
+        result = DB_getCoursesByName(search_kw);
+    } else {
+        result = DB_getAllCourses();
+    }
+
     total = page = current_total = max_page = page_size = -1;
+
+    if (result == NULL) {
+        printf("[提示] 无法获取课程数据\n");
+        getch();
+        goto GC_Collect;
+    }
+
+    total = 0;
+    for (NodeList *pt = result; pt != NULL; pt = pt->next) total++;
+    max_page = (int) ceil((double) total / page_size);
+    current_total = (page == max_page) ? (total - (page - 1) * page_size) : page_size;
 
     // 解析课程数据
     course_data_list = linkListObject_Init(); // 链表初始化
-    // TODO
+    for (NodeList *pt = result; pt != NULL; pt = pt->next) {
+        Course *course_data_pt = DB_getCourseById((int64) pt->indexNode->index.data);
+        if (course_data_pt == NULL) {
+            continue;
+        }
+        struct studentCourseSelection *tmp = calloc(1, sizeof(struct studentCourseSelection));
+        if (tmp == NULL) {
+            printf("[提示] 内存不足\n");
+            getch();
+            goto GC_Collect;
+        }
+
+        if (course_data_pt->currentMembers >= course_data_pt->maxMembers) {
+            tmp->status = 2;
+            strcpy(tmp->locked_reason, "课程已满员");
+        }
+
+        CourseSelection *selection = DB_getSelectionByUserIdAndCourseId(GlobalUser->id, course_data_pt->id);
+
+        if (selection != NULL) {
+            tmp->status = 1;
+            tmp->selection_time = selection->selectionTime;
+        }
+
+        tmp->course = *course_data_pt;
+        linkListObject_Append(course_data_list, tmp);
+    }
+    if (course_data_list->head) {
+        selectedRow = course_data_list->head;
+    }
 
     Refresh:
 
@@ -218,13 +266,11 @@ void printStudentCourseSelection() {
     printf("\n");
     UI_printInMiddle("=============================\n", 104);
     printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) printf("模糊搜索=%s AND ", search_kw);
-    printf("排序方式=%s", SORT_METHOD_COURSE[sort_method]);
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s", search_kw); } else { printf("\n"); }
     printf("  [选课概况] 已选%.2f学分\n\n", current_score);
     printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
            total, page, max_page);
-    printf("\n\t   <Enter>选课/退选 <K>课程模糊查询 <S>排序切换至%s <Esc>返回主菜单\n",
-           SORT_METHOD_COURSE[sort_method + 1 > 2 ? 0 : sort_method + 1]);
+    printf("\n\t   <Enter>选课/退选 <K>课程模糊查询 <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         UI_printErrorData("暂无可选课程");
@@ -298,16 +344,30 @@ void printStudentCourseSelection() {
             selectedRow = 0;
             goto GetCourseAndDisplay;
         case 13: // 选课选项
-            printf("[提示] 正在请求服务器...");
-            // TODO
-            if (selected_selection->status == 0) {
-                // TODO 选课
-            } else {
-                if (selected_selection->status == 1) {
-                    // TODO 退选
-                } else
+            printf("[提示] 正在请求...");
+            switch (selected_selection->status) {
+                case 0: {
+                    CourseSelection *selection = DB_selectCourse(GlobalUser->id, selected_course->id);
+                    if (selection == NULL) {
+                        printf("\n[选课失败] 选课失败，请重试（按任意键继续）\n");
+                    } else {
+                        printf("\n[选课成功] 选课成功，您的选课ID为：%lld（按任意键继续）\n", selection->id);
+                    }
+                    break;
+                }
+                case 1: {
+                    CourseSelection *confirm = DB_withdrawCourse(GlobalUser->id, selected_course->id);
+                    if (confirm == NULL) {
+                        printf("\n[退选失败] 退选失败，请重试（按任意键继续）\n");
+                    } else {
+                        printf("\n[退选成功] 退选成功（按任意键继续）\n");
+                    }
+                    break;
+                }
+                default:
                     printf("\n[选课失败] 您无法选择该课程：%s（按任意键继续）\n",
                            selected_selection->locked_reason);
+                    break;
             }
         After:
             getch();
@@ -460,7 +520,7 @@ void printStudentLectureTable() {
 void printAllCourses(int scene) {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    char search_kw[36] = "", search_semester[36] = "";
+    char search_kw[36] = "";
     int total, page = 1, max_page, page_size = 15, current_total;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
@@ -468,8 +528,8 @@ void printAllCourses(int scene) {
 
     GetCourseAndDisplay:
     system("chcp 936>nul & cls & MODE CON COLS=130 LINES=55");
-    // ... 请求过程
-    printf("[提示] 正在请求服务器...\n");
+
+    printf("[提示] 正在请求...\n");
 
     NodeList *result;
     if (strlen(search_kw) > 0) {
@@ -486,13 +546,19 @@ void printAllCourses(int scene) {
     // 解析课程数据
     course_data_list = linkListObject_Init(); // 链表初始化
     int cnt = 0;
-    for (NodeList *j=result; j!=NULL; j=j->next) {
+    for (NodeList *j = result; j != NULL; j = j->next) {
         cnt += 1;
-        if (cnt > (page - 1) * page_size + 1 && cnt <= (page - 1) * page_size + current_total) {
-            Course *course_data_pt = DB_getCourseById((int64)  j->indexNode->index.data);
-            linkListObject_Append(course_data_list, course_data_pt);
+        if (cnt > (page - 1) * page_size && cnt <= (page - 1) * page_size + current_total) {
+            Course *course_data_pt = DB_getCourseById((int64) j->indexNode->index.data);
+            if (course_data_pt == NULL) {
+                printf("[错误] 无法获取课程信息（课程ID=%lld）\n", (int64) j->indexNode->index.data);
+                continue;
+            }
+            Course *insert = memcpy(malloc(sizeof(Course)), course_data_pt, sizeof(Course));
+            linkListObject_Append(course_data_list, insert);
         }
     }
+    if (course_data_list->head != NULL) selectedRow = course_data_list->head;
 
     Refresh:
 
@@ -521,7 +587,7 @@ void printAllCourses(int scene) {
     printf("\n");
     UI_printInMiddle("=============================\n", 122);
     printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) printf("模糊搜索=%s", search_kw);
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
     printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
            total, page, max_page);
     printf("\n");
@@ -534,9 +600,8 @@ void printAllCourses(int scene) {
     printf(" <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
-        if (strlen(search_kw) || strlen(search_semester)) {
+        if (strlen(search_kw)) {
             UI_printErrorData("没有查询到符合条件的课程");
-            strcpy(search_semester, "");
             strcpy(search_kw, "");
             goto GetCourseAndDisplay;
         } else {
@@ -613,7 +678,7 @@ void printAllCourses(int scene) {
                     goto GetCourseAndDisplay;
                 }
 
-                // TODO
+                DB_deleteCourse(pt->id); // 删除课程
 
                 printf("[删除成功] 课程 %s(%lld) 和相关选课记录已被删除（按任意键继续）。\n", pt->courseName,
                        pt->id);
@@ -660,7 +725,6 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
     char file_name[len];
     memset(file_name, 0, len);
     sprintf(file_name, "%s(%lld)学生名单_%s.csv", title, course->id, timestamp);
-    free(title);
     free(timestamp);
     FILE *file = fopen(file_name, "w");
     printf("[提示] 正在将学生名单导出至：%s...\n", file_name);
@@ -668,15 +732,27 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
         printf("[导出失败] 无法创建文件\"%s\"，请检查是否有读写权限（按任意键继续）\n", file_name);
         return -1;
     }
-    fprintf(file, "序号,姓名,学号,选课时间\n");
+    fprintf(file, "序号,姓名,学号,选课时间,成绩,联系方式\n");
     int counter = 1;
     for (LinkList_Node *pt = linkList->head; pt != NULL; pt = pt->next) {
         struct teacherCourseSelection *p = pt->data;
-        fprintf(file, "%d,%s,%s,%s\n",
+
+        // 成绩按照条件显示
+        char *showScore;
+        if (p->score < 0) {
+            showScore = "未录入";
+        } else {
+            showScore = calloc(10, sizeof(char));
+            showScore = lltoa(p->score, showScore, 10);
+        }
+
+        fprintf(file, "%d,%s,%s,%s,%s,%s\n",
                 counter,
                 p->student.name,
                 p->student.empId,
-                getFormatTimeString(p->selection_time));
+                getFormatTimeString(p->selection_time),
+                showScore,
+                p->student.contact);
         counter++;
     }
     fclose(file);
@@ -689,7 +765,7 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
  * 教师/管理员打印学生名单
  */
 void printStudentList(Course *courseData) {
-    system("chcp 936>nul & cls & MODE CON COLS=80 LINES=55");
+    system("chcp 936>nul & cls & MODE CON COLS=100 LINES=55");
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     int sort_method = 0; // 排序方法 0 - 默认排序 1 - 学分降序 2 - 学分升序
@@ -699,39 +775,47 @@ void printStudentList(Course *courseData) {
     LinkList_Node *selectedRow = NULL;
 
     Teacher_GetCourseAndDisplay:
-    // ... 请求过程
-    printf("[提示] 正在请求服务器...\n");
-    // TODO
+    printf("[提示] 正在请求...\n");
+
+    IndexListNode *result = DB_getSelectionsByCourseId(courseData->id);
+    total = 0;
+    for (IndexListNode *i = result; i != NULL; i = i->next) total++;
 
     max_page = (int) ceilf((float) total / (float) page_size);
 
     // 解析名单数据
     student_list = linkListObject_Init(); // 链表初始化
-    /*
-    cJSON *data = cJSON_GetObjectItem(ret_json, "data");
-    for (int i = 0; i < total; i++) {
-        cJSON *row_data = cJSON_GetArrayItem(data, i);
-        struct teacherCourseSelection *data_pt = calloc(1, sizeof(struct teacherCourseSelection));
-        if (parseStudentData(row_data, data_pt)) return;
-        LinkList_Node *node = linkListObject_Append(student_list, data_pt); // 链表尾部追加元素
-        if (node == NULL) {
-            printErrorData("内存错误");
+
+    int cnt = 0;
+    for (IndexListNode *j = result; j != NULL; j = j->next) {
+        cnt += 1;
+        if (cnt > (page - 1) * page_size && cnt <= (page - 1) * page_size + page_size) {
+            CourseSelection *courseSelection = DB_getSelectionById((int64) j->index.data);
+            struct teacherCourseSelection *insert = malloc(sizeof(struct teacherCourseSelection));
+            insert->student = *courseSelection->student;
+            insert->selection_time = courseSelection->selectionTime;
+            insert->course = *courseSelection->course;
+            insert->score = courseSelection->score;
+            insert->id = courseSelection->id;
+
+            if (insert == NULL) {
+                printf("[错误] 无法获取学生选课信息（选课ID=%lld）\n", (int64) j->index.data);
+                continue;
+            }
+            linkListObject_Append(student_list, insert);
         }
-        if (i == 0) selectedRow = node;
     }
-    cJSON_Delete(ret_json);
-    free(resp.raw_string);
-    */
+    if (student_list->head != NULL) selectedRow = student_list->head;
 
     Teacher_Refresh:
 
     system("cls");
     printf("\n");
-    UI_printHeader(69);
+    UI_printHeader(99);
     printf("\n");
-    UI_printInMiddle("======= 课程·课程名单 =======\n", 71);
-    printf("%-6s%-15s%-20s%-30s\n", "序号", "姓名", "学号", "选课时间");
-    printf("-----------------------------------------------------------------------\n");
+    UI_printInMiddle("======= 课程·课程名单 =======\n", 101);
+    printf("%-6s%-15s%-20s%-30s%-10s%-15s\n", "序号", "姓名", "学号", "选课时间", "成绩", "联系方式");
+    printf("------------------------------------------------------------------------------------------------\n");
     int counter = 0, current_total = 0;
     for (LinkList_Node *pt = student_list->head; pt != NULL; pt = pt->next) {
         counter++;
@@ -741,11 +825,22 @@ void printStudentList(Course *courseData) {
         if (selectedRow == NULL) selectedRow = pt;
         struct teacherCourseSelection *tmp = pt->data;
         if (pt == selectedRow) SetConsoleTextAttribute(windowHandle, 0x70);
-        printf("%4d  %-15s%-20s%-30s\n",
+
+        char *showScore;
+        if (tmp->score < 0) {
+            showScore = "未录入";
+        } else {
+            showScore = calloc(10, sizeof(char));
+            showScore = lltoa(tmp->score, showScore, 10);
+        }
+
+        printf("%4d  %-15s%-20s%-30s%-10s%-15s\n",
                counter,
                tmp->student.name,
                tmp->student.empId,
-               getFormatTimeString(tmp->selection_time));
+               getFormatTimeString(tmp->selection_time),
+               showScore,
+               tmp->student.contact);
         SetConsoleTextAttribute(windowHandle, 0x07);
         if (pt->next == NULL) { // 链表的最后一个节点
             printf("\n");
@@ -763,7 +858,7 @@ void printStudentList(Course *courseData) {
     } else {
         printf("\t");
     }
-    printf(" <E>导出学生名单 <Esc>返回主菜单\n");
+    printf(" <S>录入该学生成绩 <E>导出学生名单 <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         UI_printErrorData("暂无名单");
@@ -814,6 +909,28 @@ void printStudentList(Course *courseData) {
             if (GlobalUser->role != 2) break; // 无法新增学生
             importStuCourseData();
             goto Teacher_GetCourseAndDisplay;
+        case 'S':
+        case 's': // 录入学生成绩
+        {
+            int score = -1;
+            UI_inputIntWithRegexCheck("[修改课程] 请录入学生成绩（0-100分）\n",
+                                      POINTS_PATTERN,
+                                      &score);
+            if (score < 0 || score > 100) {
+                printf("[录入失败] 无效的成绩（按任意键继续）\n");
+                getch();
+                goto Teacher_Refresh;
+            }
+            struct teacherCourseSelection *pt = selectedRow->data;
+
+            if (DB_updateSelectionScore(pt->id, score)) {
+                printf("[录入成功] 成绩已录入（按任意键继续）\n");
+            } else {
+                printf("[录入失败] 成绩录入失败（按任意键继续）\n");
+            }
+            getch();
+            goto Teacher_Refresh;
+        }
         case 'A':
         case 'a': // 新增选课学生
             if (GlobalUser->role != 2) break; // 无法新增学生
@@ -825,7 +942,24 @@ void printStudentList(Course *courseData) {
                         user_id,
                         30) == -1)
                     goto Teacher_Refresh;
-                // TODO
+                User *user = DB_getUserByEmpId(user_id);
+
+                if (user == NULL) {
+                    printf("[新增失败] 用户 %s 不存在（按任意键继续）\n", user_id);
+                    getch();
+                    goto Teacher_Refresh;
+                }
+
+                CourseSelection *selection = DB_selectCourse(user->id, courseData->id);
+
+                if (selection == NULL) {
+                    printf("[新增失败] 校验失败（按任意键继续）\n");
+                    getch();
+                    goto Teacher_Refresh;
+                }
+
+                printf("[新增成功] 用户 %s(%s) 已成功选课（按任意键继续）\n", user->name, user->empId);
+
                 getch();
                 goto Teacher_GetCourseAndDisplay;
             }
@@ -846,7 +980,23 @@ void printStudentList(Course *courseData) {
                     getch();
                     goto Teacher_GetCourseAndDisplay;
                 }
-                // TODO
+
+                User *user = DB_getUserByEmpId(input_char);
+                if (user == NULL) {
+                    printf("学号不存在，已取消操作（按任意键继续）。\n");
+                    getch();
+                    goto Teacher_GetCourseAndDisplay;
+                }
+
+                CourseSelection *ret = DB_withdrawCourse(user->id, courseData->id); // 删除选课
+                if (ret == NULL) {
+                    printf("[退选失败] 退选失败（按任意键继续）\n");
+                    getch();
+                    goto Teacher_GetCourseAndDisplay;
+                }
+
+                printf("[退选成功] 用户 %s(%s) 已成功退选（按任意键继续）\n", user->name, user->empId);
+                free(ret);
                 getch();
                 goto Teacher_GetCourseAndDisplay;
             }
@@ -1154,22 +1304,25 @@ void editCourse(Course *_course) {
             if (course->weekStart <= course->weekEnd && course->weekStart > 0 && course->maxMembers > 0 &&
                 course->points > 0) {
 
-                Course *ret = DB_createCourse(course->courseName,
-                                              course->description,
-                                              course->teacherId,
-                                              course->type,
-                                              course->weekStart,
-                                              course->weekEnd,
-                                              0,
-                                              course->maxMembers,
-                                              course->location,
-                                              course->points,
-                                              course->schedule);
-
-                if (ret == NULL) {
-                    printf("[提交失败] 课程修改/新增失败（按任意键继续）\n");
-                    getch();
-                    goto EditCourse_Refresh;
+                if (course->id) {
+                    DB_updateCourse(course);
+                } else {
+                    Course *ret = DB_createCourse(course->courseName,
+                                                  course->description,
+                                                  course->teacherId,
+                                                  course->type,
+                                                  course->weekStart,
+                                                  course->weekEnd,
+                                                  0,
+                                                  course->maxMembers,
+                                                  course->location,
+                                                  course->points,
+                                                  course->schedule);
+                    if (ret == NULL) {
+                        printf("[提交失败] 课程修改/新增失败（按任意键继续）\n");
+                        getch();
+                        goto EditCourse_Refresh;
+                    }
                 }
 
                 printf("[提交成功] 课程修改/新增成功（按任意键返回课程一览）\n");
@@ -1277,7 +1430,35 @@ void importStuCourseData() {
                 getch();
                 goto Import_Refresh;
             }
-            // TODO
+            printf("[提示] 您确定要导入%d条数据吗？（Y）\n", total);
+            int ch = getch();
+            if (ch != 'Y' && ch != 'y') {
+                printf("[提示] 已取消导入（按任意键继续）\n");
+                getch();
+                goto Import_Refresh;
+            }
+            int t_counter = 0, t_success = 0;
+            for (LinkList_Node *pt = import_list->head; pt != NULL; pt = pt->next) {
+                t_counter++;
+                ImportData *tmp = pt->data;
+                User *user = DB_getUserByEmpId(tmp->uid);
+                if (user == NULL) {
+                    printf("[%d - 失败] 未找到学号为 %s 的学生，请检查学号是否正确\n", t_counter, tmp->uid);
+                    continue;
+                }
+                int64 course_id;
+                // printf("tmp->course_id: %s\n", tmp->course_id);
+                course_id = strtoll(tmp->course_id, NULL, 10);
+                CourseSelection *ret = DB_selectCourse(user->id, course_id);
+                if (ret == NULL) {
+                    printf("[%d - 失败] 校验未通过\n", t_counter);
+                    continue;
+                }
+                t_success++;
+            }
+            printf("[导入成功] 共导入%d条数据（按任意键继续）\n", t_success);
+            getch();
+            goto Import_Refresh;
             break;
         }
         case 'I': // 选择文件导入

@@ -237,19 +237,19 @@ void UI_doMainMenuActions(int command) {
     switch (command) {
         // 修改密码
         case 5:
-        case 14:
+        case 13:
         case 23:
             Serv_changePassword();
             break;
         // 退出登录
         case 6:
-        case 15:
+        case 14:
         case 24:
             GlobalUser = NULL;
             longjmp(GLOBAL_goto_login, 1);
         // 退出程序
         case 7:
-        case 16:
+        case 15:
         case 25:
             exit(0);
         case 1:
@@ -296,10 +296,9 @@ int UI_printMainMenu(char wrong_command) {
         case 1: // 教师
             UI_printChoices("(1) 授课课程信息管理", &INDEX);
             UI_printChoices("(2) 全校课程信息一览", &INDEX);
-            UI_printChoices("(3) 学生成绩管理", &INDEX);
-            UI_printChoices("(4) 修改密码", &INDEX);
-            UI_printChoices("(5) 退出登录", &INDEX);
-            UI_printChoices("(6) 退出程序", &INDEX);
+            UI_printChoices("(3) 修改密码", &INDEX);
+            UI_printChoices("(4) 退出登录", &INDEX);
+            UI_printChoices("(5) 退出程序", &INDEX);
             break;
         case 2: // 管理员
             UI_printChoices("(1) 课程信息管理", &INDEX);

@@ -136,11 +136,12 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
     strcpy(user->contact, contact);
     user->lastLoginTime = 0;
     DB_saveUser(user);
-    user_file_Index = AVL_insertNode(user_file_Index, user->id, INDEX_TYPE_OBJECT, 0);
-    user_name_Index = AVL_insertNode(user_name_Index, Hash_String(Wubi_chn2wubi(name)), INDEX_TYPE_INT64,
+    int64 hash = Hash_String(Wubi_chn2wubi(name));
+    user_file_Index = AVL_insertNode(user_file_Index, user->id, INDEX_TYPE_INT64, (void *) user->id);
+    user_name_Index = AVL_insertNode(user_name_Index, hash, INDEX_TYPE_INT64,
                                      (void *) user->id);
     user_empId_Index = AVL_insertNode(user_empId_Index, Hash_String(empId), INDEX_TYPE_INT64, (void *) user->id);
-    user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_INT64, user);
+    user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_OBJECT, user);
     DB_saveUserIndex();
     return user;
 }

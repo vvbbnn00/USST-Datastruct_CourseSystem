@@ -5,16 +5,16 @@
 #ifndef PROJECT_LINK_LIST_OBJECT_H
 #define PROJECT_LINK_LIST_OBJECT_H
 
-// é“¾è¡¨èŠ‚ç‚¹å®šä¹‰
+// Á´±í½Úµã¶¨Òå
 typedef struct linkListNode__ {
-    struct linkListNode__ *prev, *next; // å‰åæŒ‡é’ˆ
-    void *data; // æ•°æ®å­˜æ”¾å¤„æŒ‡é’ˆ
+    struct linkListNode__ *prev, *next; // Ç°ºóÖ¸Õë
+    void *data; // Êı¾İ´æ·Å´¦Ö¸Õë
 } LinkList_Node;
 
-// é“¾è¡¨ç»“æ„ä½“å®šä¹‰
+// Á´±í½á¹¹Ìå¶¨Òå
 typedef struct linkListObject__ {
-    LinkList_Node *head, *foot; // å¤´å°¾æŒ‡é’ˆ
-    int length; // é“¾è¡¨é•¿åº¦
+    LinkList_Node *head, *foot; // Í·Î²Ö¸Õë
+    int length; // Á´±í³¤¶È
 } LinkList_Object;
 
 extern LinkList_Object *linkListObject_Init();

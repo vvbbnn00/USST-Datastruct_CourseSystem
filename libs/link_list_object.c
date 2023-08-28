@@ -3,7 +3,7 @@
 //
 
 /*
- * å®ç°é“¾è¡¨
+ * ÊµÏÖÁ´±í
  */
 
 #include <stdio.h>
@@ -13,7 +13,7 @@
 
 
 /**
- * é“¾è¡¨åˆå§‹åŒ–
+ * Á´±í³õÊ¼»¯
  */
 LinkList_Object *linkListObject_Init() {
     LinkList_Object *pt = malloc(sizeof(LinkList_Object));
@@ -22,10 +22,10 @@ LinkList_Object *linkListObject_Init() {
 }
 
 /**
- * é“¾è¡¨å¾€åè¿½åŠ æ•°æ®
+ * Á´±íÍùºó×·¼ÓÊı¾İ
  *
- * @param list é“¾è¡¨å¯¹è±¡
- * @param data å¾…æ’å…¥æ•°æ®
+ * @param list Á´±í¶ÔÏó
+ * @param data ´ı²åÈëÊı¾İ
  * @return
  */
 LinkList_Node *linkListObject_Append(LinkList_Object *list, void *data) {
@@ -47,7 +47,7 @@ LinkList_Node *linkListObject_Append(LinkList_Object *list, void *data) {
 }
 
 /**
- * é‡Šæ”¾é“¾è¡¨åŒ…å«çš„æ‰€æœ‰æ•°æ®ï¼ˆä¸é‡Šæ”¾è‡ªèº«ï¼‰
+ * ÊÍ·ÅÁ´±í°üº¬µÄËùÓĞÊı¾İ£¨²»ÊÍ·Å×ÔÉí£©
  * @param list
  */
 void linkListObject_Delete(LinkList_Object *list, char deleteData) {
