@@ -848,6 +848,7 @@ void printStudentList(Course *courseData) {
 
     int sort_method = 0; // 排序方法 0 - 默认排序 1 - 学分降序 2 - 学分升序
     int total, page = 1, page_size = 30, max_page;
+    int stat_a90 = 0, stat_a80 = 0, stat_a60 = 0, stat_a0 = 0; // 统计数据
 
     LinkList_Object *student_list = NULL;
     LinkList_Node *selectedRow = NULL;
@@ -857,7 +858,11 @@ void printStudentList(Course *courseData) {
 
     IndexListNode *result = DB_getSelectionsByCourseId(courseData->id);
     total = 0;
-    for (IndexListNode *i = result; i != NULL; i = i->next) total++;
+
+    stat_a90 = 0, stat_a80 = 0, stat_a60 = 0, stat_a0 = 0;
+    for (IndexListNode *i = result; i != NULL; i = i->next) {
+        total++;
+    }
 
     max_page = (int) ceilf((float) total / (float) page_size);
 
@@ -936,7 +941,7 @@ void printStudentList(Course *courseData) {
     } else {
         printf("\t");
     }
-    printf(" <S>录入该学生成绩 <E>导出学生名单 <Esc>返回主菜单\n");
+    printf(" <S>录入该学生成绩 <G>统计成绩分段信息 <E>导出学生名单 <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         UI_printErrorData("暂无名单");
@@ -987,6 +992,23 @@ void printStudentList(Course *courseData) {
             if (GlobalUser->role != 2) break; // 无法新增学生
             importStuCourseData();
             goto Teacher_GetCourseAndDisplay;
+        case 'G':
+        case 'g': // 显示分段分数信息
+        {
+            stat_a90 = 0, stat_a80 = 0, stat_a60 = 0, stat_a0 = 0;
+            for (IndexListNode *i = result; i != NULL; i = i->next) {
+                CourseSelection *courseSelection = DB_getSelectionById((int64) i->index.data);
+
+                if (courseSelection->score >= 90) stat_a90++;
+                else if (courseSelection->score >= 80) stat_a80++;
+                else if (courseSelection->score >= 60) stat_a60++;
+                else stat_a0++;
+            }
+            printf("\n[成绩分段统计] 90分以上：%d人，80-89分：%d人，60-79分：%d人，60分以下：%d人\n", stat_a90, stat_a80, stat_a60,
+                   stat_a0);
+            getch();
+            goto Teacher_Refresh;
+        }
         case 'S':
         case 's': // 录入学生成绩
         {

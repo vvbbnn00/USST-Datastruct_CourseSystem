@@ -42,9 +42,6 @@
 #define WORDS_Login_role_admin "管理员"
 #define WORDS_Login_role_unknown "未知角色"
 
-#define WORDS_Login_parse_role_error "[解析错误] 返回参数role解析错误，登录终止。\n"
-#define WORDS_Login_save_session_error "[文件错误] 写入登录状态异常，自动登录功能可能不可用。\n"
-
 #include <setjmp.h>
 jmp_buf GLOBAL_goto_login;
 
