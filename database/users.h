@@ -1,8 +1,9 @@
 //
 // Created by vvbbnn00 on 2023/08/28.
 //
-#ifndef COURSESYSTEM2023_DATABASE_H
-#define COURSESYSTEM2023_DATABASE_H
+
+#ifndef COURSESYSTEM2023_USERS_H
+#define COURSESYSTEM2023_USERS_H
 
 #include "../models.h"
 #include <string.h>
@@ -13,57 +14,22 @@
 #include "../utils/avl.h"
 #include "../utils/hash.h"
 #include "../utils/wubi.h"
+#include "database.h"
 
 int64 AUTO_INCREMENT_USER_ID = 1;   // 自增的用户ID
-int64 AUTO_INCREMENT_COURSE_ID = 1; // 自增的课程ID
-int64 AUTO_INCREMENT_SELECTION_ID = 1;  // 自增的选课ID
 
 AVLNode *user_ID_Index = NULL;      // 用户ID索引，将用户信息缓存到内存中，每次启动重新构建
 AVLNode *user_name_Index = NULL;    // 用户姓名索引，从文件中读取
 AVLNode *user_empId_Index = NULL;   // 用户工号索引，从文件中读取
 
-void DB_Init() {
-    // 检查文件夹是否存在，若不存在则创建
-    if (access("data", 0) == -1) {
-        mkdir("data");
-    }
-    if (access("data/index", 0) == -1) {
-        mkdir("data/index");
-    }
-    if (access("data/user", 0) == -1) {
-        mkdir("data/user");
-    }
+void DB_saveAutoIncrement();
 
-    if (access("data/index/auto_increment.dat", 0) == -1) {
-        FILE *fp = fopen("data/index/auto_increment.dat", "wb");
-        fwrite(&AUTO_INCREMENT_USER_ID, sizeof(int64), 1, fp);
-        fwrite(&AUTO_INCREMENT_COURSE_ID, sizeof(int64), 1, fp);
-        fwrite(&AUTO_INCREMENT_SELECTION_ID, sizeof(int64), 1, fp);
-        fclose(fp);
-    } else {
-        FILE *fp = fopen("data/index/auto_increment.dat", "rb");
-        fread(&AUTO_INCREMENT_USER_ID, sizeof(int64), 1, fp);
-        fread(&AUTO_INCREMENT_COURSE_ID, sizeof(int64), 1, fp);
-        fread(&AUTO_INCREMENT_SELECTION_ID, sizeof(int64), 1, fp);
-        fclose(fp);
-    }
-
-    // 加载用户索引
-    user_name_Index = AVL_loadFromFile("data/index/user_name.avl");
-    user_empId_Index = AVL_loadFromFile("data/index/user_empId.avl");
-}
-
-
-void saveAutoIncrement(){
-    FILE *fp = fopen("data/index/auto_increment.dat", "wb");
-    fwrite(&AUTO_INCREMENT_USER_ID, sizeof(int64), 1, fp);
-    fwrite(&AUTO_INCREMENT_COURSE_ID, sizeof(int64), 1, fp);
-    fwrite(&AUTO_INCREMENT_SELECTION_ID, sizeof(int64), 1, fp);
-    fclose(fp);
-}
-
-
-User *getUserById(int64 userId) {
+/**
+ * 根据ID获取用户
+ * @param userId
+ * @return
+ */
+User *DB_getUserById(int64 userId) {
     IndexListNode *node = AVL_searchExact(user_ID_Index, userId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
@@ -84,17 +50,27 @@ User *getUserById(int64 userId) {
     return (User *) node->index.data;
 }
 
-User *getUserByEmpId(char *empId) {
+/**
+ * 根据学工号获取用户
+ * @param empId
+ * @return
+ */
+User *DB_getUserByEmpId(char *empId) {
     IndexListNode *node = AVL_searchExact(user_empId_Index, Hash_String(empId));
     if (node == NULL) {
         return NULL;
     }
     // printf("%p\n", node);
     int64 userId = (int64) node->index.data;
-    return getUserById(userId);
+    return DB_getUserById(userId);
 }
 
-NodeList *getUserByName(char *name) {
+/**
+ * 根据姓名获取用户
+ * @param name
+ * @return
+ */
+NodeList *DB_getUsersByName(char *name) {
     NodeList *list = NULL;
     char *preprocessedName = Hash_PreprocessString(Wubi_chn2wubi(name));
     int64 hashStart = Hash_String(preprocessedName);
@@ -105,7 +81,11 @@ NodeList *getUserByName(char *name) {
     return list;
 }
 
-void saveUser(User *user) {
+/**
+ * 保存用户
+ * @param user
+ */
+void DB_saveUser(User *user) {
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/user/%lld.dat", user->id);
     FILE *fp = fopen(filePath, "wb");
@@ -117,15 +97,27 @@ void saveUser(User *user) {
     fclose(fp);
 }
 
-void saveUserIndex() {
+/**
+ * 保存用户索引
+ */
+void DB_saveUserIndex() {
     AVL_saveToFile(user_name_Index, "data/index/user_name.avl");
     AVL_saveToFile(user_empId_Index, "data/index/user_empId.avl");
-    saveAutoIncrement();
+    DB_saveAutoIncrement();
 }
 
-User *registerUser(char *name, char *empId, char *passwd, int role, char *contact) {
+/**
+ * 注册用户
+ * @param name 姓名
+ * @param empId 学工号
+ * @param passwd 密码
+ * @param role 角色
+ * @param contact 联系方式
+ * @return
+ */
+User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *contact) {
     // 检查empId是否已经存在
-    if (getUserByEmpId(empId) != NULL) {
+    if (DB_getUserByEmpId(empId) != NULL) {
         printf("[registerUser] 该学工号已经被注册\n");
         return NULL;
     }
@@ -141,14 +133,23 @@ User *registerUser(char *name, char *empId, char *passwd, int role, char *contac
     user->role = role;
     strcpy(user->contact, contact);
     user->lastLoginTime = 0;
-    saveUser(user);
+    DB_saveUser(user);
     user_name_Index = AVL_insertNode(user_name_Index, Hash_String(Wubi_chn2wubi(name)), INDEX_TYPE_INT64,
                                      (void *) user->id);
     user_empId_Index = AVL_insertNode(user_empId_Index, Hash_String(empId), INDEX_TYPE_INT64, (void *) user->id);
     user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_OBJECT, user);
-    saveUserIndex();
+    DB_saveUserIndex();
     return user;
 }
 
 
-#endif
+/**
+ * 更新用户信息
+ * @param user
+ */
+void DB_updateUser(User *user) {
+    DB_saveUser(user);
+    DB_saveUserIndex();
+}
+
+#endif //COURSESYSTEM2023_USERS_H

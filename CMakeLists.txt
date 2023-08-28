@@ -23,8 +23,13 @@ add_executable(CourseSystem2023 main.c
         utils/avl.h
         utils/wubi.h
         utils/hash.h
-        services/database.h
-        common.h)
+        database/database.h
+        common.h
+        database/users.h
+        services/users.h
+        utils/string_ext.h
+        services/ui.h
+        database/courses.h)
 
 
 # 为指定项目添加 include 路径

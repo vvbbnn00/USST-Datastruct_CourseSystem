@@ -7,36 +7,49 @@
 
 #define SECRET_KEY "COURSESYSTEM2023"
 #define ADMIN_USERNAME "admin"
-#define ADMIN_PASSWORD "0d990abae043551d804e834ee1b7e04ee9fcd5230b812a04da0aef6e499eb0c4"
+#define ADMIN_PASSWORD "123456"
+#define VERSION "v1.0(AVL DB Core v0.1)"
 
-// ç”¨æˆ·åæ­£åˆ™è¡¨è¾¾å¼
+// ÓÃ»§ÃûÕýÔò±í´ïÊ½
 #define USER_PATTERN "^[a-zA-Z0-9]{3,15}$"
-// å¯†ç æ­£åˆ™è¡¨è¾¾å¼
+// ÃÜÂëÕýÔò±í´ïÊ½
 #define PASSWD_PATTERN "^(?=.*\\d)(?=.*[a-zA-Z]).{8,20}$"
-// æœåŠ¡å™¨è®¾ç½®å­˜æ”¾ä½ç½®
+// ·þÎñÆ÷ÉèÖÃ´æ·ÅÎ»ÖÃ
 #define SERVER_CONFIG_PATH "server.conf"
-// ç”¨æˆ·ç™»å½•Sessionå­˜æ”¾ä½ç½®
+// ÓÃ»§µÇÂ¼Session´æ·ÅÎ»ÖÃ
 #define USER_SESSION "login.session"
-// è¯¾ç¨‹IDæ­£åˆ™è¡¨è¾¾å¼ï¼ˆé•¿åº¦ä¸º5-30ï¼Œç”±å­—æ¯ã€æ•°å­—å’Œ-ç»„æˆçš„å­—ç¬¦ä¸²ï¼Œå»ºè®®æ ¼å¼<å­¦å¹´>-<å­¦æœŸ>-<è¯¾ç¨‹ä»£å·>-<ç­çº§>ï¼‰
+// ¿Î³ÌIDÕýÔò±í´ïÊ½£¨³¤¶ÈÎª5-30£¬ÓÉ×ÖÄ¸¡¢Êý×ÖºÍ-×é³ÉµÄ×Ö·û´®£¬½¨Òé¸ñÊ½<Ñ§Äê>-<Ñ§ÆÚ>-<¿Î³Ì´úºÅ>-<°à¼¶>£©
 #define COURSE_ID_PATTERN "^[a-zA-z0-9-]{5,30}$"
-// è¯¾ç¨‹åç§°æ­£åˆ™è¡¨è¾¾å¼ï¼ˆé•¿åº¦ä¸º5-50å­—ç¬¦ï¼Œç”±å­—æ¯ã€æ•°å­—ã€ä¸­æ–‡å’Œ()-ç»„æˆçš„å­—ç¬¦ä¸²ï¼‰
-#define COURSE_TITLE_PATTERN "^[a-zA-Z0-9()ï¼ˆï¼‰\u4e00-\u9fa5-]{5,50}$"
-// è¯¾ç¨‹æè¿°æ­£åˆ™è¡¨è¾¾å¼ï¼ˆé•¿åº¦ä¸º 5-250 å­—ç¬¦ï¼‰
+// ¿Î³ÌÃû³ÆÕýÔò±í´ïÊ½£¨³¤¶ÈÎª5-50×Ö·û£¬ÓÉ×ÖÄ¸¡¢Êý×Ö¡¢ÖÐÎÄºÍ()-×é³ÉµÄ×Ö·û´®£©
+#define COURSE_TITLE_PATTERN "^[a-zA-Z0-9()£¨£©\u4e00-\u9fa5-]{5,50}$"
+// ¿Î³ÌÃèÊöÕýÔò±í´ïÊ½£¨³¤¶ÈÎª 5-250 ×Ö·û£©
 #define COURSE_DESCRIPTION_PATTERN "^[\\D0-9]{5,250}$"
-// è¯¾ç¨‹ç±»åž‹æ­£åˆ™è¡¨è¾¾å¼
+// ¿Î³ÌÀàÐÍÕýÔò±í´ïÊ½
 #define COURSE_TYPE_PATTERN "^[0-3]{1}$"
-// å­¦æœŸæ­£åˆ™è¡¨è¾¾å¼ï¼ˆé•¿åº¦ä¸º 4-10 å­—ç¬¦ï¼Œç”±å­—æ¯ã€æ•°å­—å’Œ-ç»„æˆçš„å­—ç¬¦ä¸²ï¼Œå»ºè®®æ ¼å¼<å­¦å¹´>-<å­¦æœŸ>ï¼‰
+// Ñ§ÆÚÕýÔò±í´ïÊ½£¨³¤¶ÈÎª 4-10 ×Ö·û£¬ÓÉ×ÖÄ¸¡¢Êý×ÖºÍ-×é³ÉµÄ×Ö·û´®£¬½¨Òé¸ñÊ½<Ñ§Äê>-<Ñ§ÆÚ>£©
 #define SEMESTER_PATTERN "^[a-zA-Z0-9-]{4,10}$"
-// æ•°å­—æ ‡å‡†æ­£åˆ™è¡¨è¾¾å¼ï¼ˆå¤§äºŽ0ï¼‰
+// Êý×Ö±ê×¼ÕýÔò±í´ïÊ½£¨´óÓÚ0£©
 #define NUMBER_PATTERN "^[+]{0,1}(\\d+)$"
-// å­¦åˆ†æ­£åˆ™è¡¨è¾¾å¼ï¼ˆå¤§äºŽ0çš„å°æ•°ï¼Œæœ€å¤šå°æ•°ç‚¹åŽ2ä½ï¼‰
+// Ñ§·ÖÕýÔò±í´ïÊ½£¨´óÓÚ0µÄÐ¡Êý£¬×î¶àÐ¡Êýµãºó2Î»£©
 #define POINTS_PATTERN "^[+]{0,1}(\\d+)$|^[+]{0,1}(\\d+\\.\\d{1,2})$"
-// ç”¨æˆ·è§’è‰²æ­£åˆ™è¡¨è¾¾å¼
+// ÓÃ»§½ÇÉ«ÕýÔò±í´ïÊ½
 #define USER_ROLE_PATTERN "^[0-2]{1}$"
-// ç”¨æˆ·å§“åæ­£åˆ™è¡¨è¾¾å¼
-#define USER_NAME_PATTERN "^[ 0-9a-zA-Z\u4e00-\u9fa5Â·]{2,20}$"
-// å­¦æ ¡æ­£åˆ™è¡¨è¾¾å¼ï¼ˆé•¿åº¦ä¸º3-50å­—ç¬¦ï¼Œç”±å­—æ¯ã€æ•°å­—ã€ä¸­æ–‡å’Œç©ºæ ¼ç»„æˆçš„å­—ç¬¦ä¸²ï¼‰
-#define SCHOOL_PATTERN "^[a-zA-Z0-9()ï¼ˆï¼‰\u4e00-\u9fa5-]{3,50}$"
+// ÓÃ»§ÐÕÃûÕýÔò±í´ïÊ½
+#define USER_NAME_PATTERN "^[ 0-9a-zA-Z\u4e00-\u9fa5¡¤]{2,20}$"
+// Ñ§Ð£ÕýÔò±í´ïÊ½£¨³¤¶ÈÎª3-50×Ö·û£¬ÓÉ×ÖÄ¸¡¢Êý×Ö¡¢ÖÐÎÄºÍ¿Õ¸ñ×é³ÉµÄ×Ö·û´®£©
+#define SCHOOL_PATTERN "^[a-zA-Z0-9()£¨£©\u4e00-\u9fa5-]{3,50}$"
 
+
+#define WORDS_Login_success "---- ÓÃ»§µÇÂ¼ - µÇÂ½³É¹¦ ----\nÓÃ»§Ãû£º      %s\nÐÕ  Ãû£º      %s\n½Ç  É«£º      %s\n¹ýÆÚÊ±¼ä£º    %s\n\nµÇÂ½³É¹¦£¬%s£¬»¶Ó­Äú£¨°´ÈÎÒâ¼ü½øÈëÖ÷Ò³£©¡£\n\n"
+#define WORDS_Login_role_student "Ñ§Éú"
+#define WORDS_Login_role_teacher "½ÌÊ¦"
+#define WORDS_Login_role_admin "¹ÜÀíÔ±"
+#define WORDS_Login_role_unknown "Î´Öª½ÇÉ«"
+
+#define WORDS_Login_parse_role_error "[½âÎö´íÎó] ·µ»Ø²ÎÊýrole½âÎö´íÎó£¬µÇÂ¼ÖÕÖ¹¡£\n"
+#define WORDS_Login_save_session_error "[ÎÄ¼þ´íÎó] Ð´ÈëµÇÂ¼×´Ì¬Òì³££¬×Ô¶¯µÇÂ¼¹¦ÄÜ¿ÉÄÜ²»¿ÉÓÃ¡£\n"
+
+#include <setjmp.h>
+jmp_buf GLOBAL_goto_login;
 
 #endif //COURSESYSTEM2023_COMMON_H
