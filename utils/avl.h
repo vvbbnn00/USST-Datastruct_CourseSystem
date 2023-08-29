@@ -9,25 +9,34 @@
 #include "../models.h"
 #include "math_ext.h"
 
+// 索引链表
 typedef struct IndexListNode {
-    Index index;
-    struct IndexListNode *next;
+    Index index; // 索引
+    struct IndexListNode *next; // 下一个节点
 } IndexListNode;
 
 // AVL树节点定义
 typedef struct AVLNode {
-    IndexListNode *list;
-    int height;
-    struct AVLNode *left;
-    struct AVLNode *right;
+    IndexListNode *list;    // 索引链表
+    int height;             // 节点高度
+    struct AVLNode *left;   // 左子树
+    struct AVLNode *right;  // 右子树
 } AVLNode;
 
+// 节点列表，在搜索多个节点时使用
 typedef struct NodeList {
-    IndexListNode *indexNode;
-    struct NodeList *next;
+    IndexListNode *indexNode;   // 索引链表节点
+    struct NodeList *next;      // 下一个节点
 } NodeList;
 
-// 创建一个新的Index节点
+
+/**
+ * 创建新的索引节点
+ * @param hash
+ * @param type
+ * @param data
+ * @return
+ */
 IndexListNode *Index_newIndexListNode(int64 hash, IndexType type, void *data) {
     IndexListNode *node = (IndexListNode *) malloc(sizeof(IndexListNode));
     if (!node) {
@@ -43,7 +52,11 @@ IndexListNode *Index_newIndexListNode(int64 hash, IndexType type, void *data) {
     return node;
 }
 
-// 获取AVL树节点的高度
+/**
+ * 获取节点的高度
+ * @param node
+ * @return
+ */
 int AVL_getHeight(AVLNode *node) {
     if (node == NULL) {
         return 0;
@@ -51,7 +64,11 @@ int AVL_getHeight(AVLNode *node) {
     return node->height;
 }
 
-// 右旋
+/**
+ * 右旋
+ * @param y
+ * @return
+ */
 AVLNode *AVL_rightRotate(AVLNode *y) {
     AVLNode *x = y->left;
     AVLNode *T3 = x->right;
@@ -65,7 +82,11 @@ AVLNode *AVL_rightRotate(AVLNode *y) {
     return x;
 }
 
-// 左旋
+/**
+ * 左旋
+ * @param x
+ * @return
+ */
 AVLNode *AVL_leftRotate(AVLNode *x) {
     AVLNode *y = x->right;
     AVLNode *T2 = y->left;
@@ -79,7 +100,11 @@ AVLNode *AVL_leftRotate(AVLNode *x) {
     return y;
 }
 
-// 获取平衡因子
+/**
+ * 获取节点的平衡因子
+ * @param node
+ * @return
+ */
 int AVL_getBalance(AVLNode *node) {
     if (node == NULL) {
         return 0;
@@ -87,7 +112,14 @@ int AVL_getBalance(AVLNode *node) {
     return AVL_getHeight(node->left) - AVL_getHeight(node->right);
 }
 
-// 插入节点
+/**
+ * 插入新的节点
+ * @param node
+ * @param hash
+ * @param type
+ * @param data
+ * @return
+ */
 AVLNode *AVL_insertNode(AVLNode *node, int64 hash, IndexType type, void *data) {
     // 正常的BST插入
     if (node == NULL) {
@@ -146,7 +178,11 @@ AVLNode *AVL_insertNode(AVLNode *node, int64 hash, IndexType type, void *data) {
     return node;
 }
 
-// 找到树中值最小的节点
+/**
+ * 查找指定哈希值的节点
+ * @param node
+ * @return
+ */
 AVLNode *AVL_minValueNode(AVLNode *node) {
     AVLNode *current = node;
 
@@ -157,7 +193,12 @@ AVLNode *AVL_minValueNode(AVLNode *node) {
     return current;
 }
 
-// 删除指定值的节点
+/**
+ * 删除指定哈希值的节点
+ * @param root
+ * @param hash
+ * @return
+ */
 AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
     if (root == NULL) {
         return root;
@@ -277,6 +318,12 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
     return root;
 }
 
+/**
+ * 查找指定哈希值的节点
+ * @param root
+ * @param hash
+ * @return
+ */
 IndexListNode *AVL_searchExact(AVLNode *root, int64 hash) {
     if (root == NULL) {
         return NULL;
@@ -305,7 +352,11 @@ int64 AVL_countNodes(AVLNode *root) {
 }
 
 
-// 创建新的节点列表节点
+/**
+ * 新建一个节点链表
+ * @param indexNode
+ * @return
+ */
 NodeList *NodeList_newNodeList(IndexListNode *indexNode) {
     NodeList *node = (NodeList *) malloc(sizeof(NodeList));
     if (!node) {
@@ -319,6 +370,11 @@ NodeList *NodeList_newNodeList(IndexListNode *indexNode) {
 }
 
 
+/**
+ * 中序遍历AVL树并将结果保存到链表中
+ * @param root
+ * @param resultList
+ */
 void AVL_inOrderTraverse(AVLNode *root, NodeList **resultList) {
     if (root == NULL) {
         return;
@@ -341,7 +397,13 @@ void AVL_inOrderTraverse(AVLNode *root, NodeList **resultList) {
 }
 
 
-// 中序遍历并在给定范围内查找节点
+/**
+ * 搜索指定范围内的节点
+ * @param root
+ * @param startHash
+ * @param endHash
+ * @param resultList
+ */
 void AVL_inOrderSearch(AVLNode *root, int64 startHash, int64 endHash, NodeList **resultList) {
     if (root == NULL) {
         return;
@@ -368,14 +430,12 @@ void AVL_inOrderSearch(AVLNode *root, int64 startHash, int64 endHash, NodeList *
     AVL_inOrderSearch(root->right, startHash, endHash, resultList);
 }
 
-NodeList *AVL_findNodesInRange(AVLNode *root, int64 startHash, int64 endHash) {
-    NodeList *resultList = NULL;
-    AVL_inOrderSearch(root, startHash, endHash, &resultList);
-    return resultList;
-}
 
-
-// 递归地将AVL树写入文件
+/**
+ * 保存AVL树到文件 Helper
+ * @param node
+ * @param file
+ */
 void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
     if (node == NULL) {
         int64 nullMarker = INT64_MIN;
@@ -425,6 +485,11 @@ void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
     AVL_saveToFileHelper(node->right, file);  // 保存右子树
 }
 
+/**
+ * 保存AVL树到文件
+ * @param root
+ * @param filename
+ */
 void AVL_saveToFile(AVLNode *root, const char *filename) {
     FILE *file = fopen(filename, "wb");
     if (!file) {
@@ -437,7 +502,11 @@ void AVL_saveToFile(AVLNode *root, const char *filename) {
     fclose(file);
 }
 
-// 递归地从文件读取并重建AVL树
+/**
+ * 从文件中加载AVL树 Helper
+ * @param file
+ * @return
+ */
 AVLNode *AVL_loadFromFileHelper(FILE *file) {
     int64 hash;
     fread(&hash, sizeof(int64), 1, file);
@@ -505,6 +574,11 @@ AVLNode *AVL_loadFromFileHelper(FILE *file) {
     return node;
 }
 
+/**
+ * 从文件中加载AVL树
+ * @param filename
+ * @return
+ */
 AVLNode *AVL_loadFromFile(const char *filename) {
     FILE *file = fopen(filename, "rb");
     if (!file) {
@@ -519,6 +593,56 @@ AVLNode *AVL_loadFromFile(const char *filename) {
     printf("[AVL] Loaded AVL tree from file: %s\n", filename);
 
     return root;
+}
+
+
+/**
+ * 中序遍历AVL树并打印结果 Helper
+ * @param root
+ */
+void AVL_printInOrder_Helper(AVLNode *root) {
+    if (root == NULL) {
+        return;
+    }
+    AVL_printInOrder_Helper(root->left);
+    printf("%lld: %p\n", root->list->index.hash, root->list->index.data);
+    AVL_printInOrder_Helper(root->right);
+}
+
+
+/**
+ * 中序遍历AVL树并打印结果
+ * @param root
+ */
+void AVL_printInOrder(AVLNode *root) {
+    printf("AVL树中共有 %lld 个节点，开始中序遍历\n", AVL_countNodes(root));
+    AVL_printInOrder_Helper(root);
+    printf("中序遍历结束\n");
+}
+
+
+/**
+ * 先序遍历AVL树并打印结果 Helper
+ * @param root
+ */
+void AVL_printPreOrder_Helper(AVLNode *root) {
+    if (root == NULL) {
+        return;
+    }
+    printf("%lld: %p\n", root->list->index.hash, root->list->index.data);
+    AVL_printPreOrder_Helper(root->left);
+    AVL_printPreOrder_Helper(root->right);
+}
+
+
+/**
+ * 先序遍历AVL树并打印结果
+ * @param root
+ */
+void AVL_printPreOrder(AVLNode *root) {
+    printf("AVL树中共有 %lld 个节点，开始先序遍历\n", AVL_countNodes(root));
+    AVL_printPreOrder_Helper(root);
+    printf("先序遍历结束\n");
 }
 
 #endif

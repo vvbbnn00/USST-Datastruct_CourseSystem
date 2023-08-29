@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(CourseSystem2023 C)
+project(CourseSystem2023 VERSION 1.0.8)
 
 set(CMAKE_C_STANDARD 23)
 
@@ -16,7 +16,12 @@ configure_file(
         COPYONLY
 )
 
+set(VERSIONINFO_RC "${CMAKE_CURRENT_SOURCE_DIR}/VersionInfo.rc")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/version.rc.in" "${VERSIONINFO_RC}")
+
+
 add_executable(CourseSystem2023
+        ${VERSIONINFO_RC}
         libs/link_list_object.c
         libs/link_list_object.h
         main.c

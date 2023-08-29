@@ -45,27 +45,18 @@ typedef struct {
     int64 score;               // 成绩
 } CourseSelection;
 
-// 选课交互类型
-typedef struct {
-    int status;                // 是否可选该门课程
-    char lockedReason[100];   // 该门课不能选择的原因
-    int64 selectionTime;      // 选择该课程的时间
-    Course *course;            // 课程信息
-} CourseSelectionInteraction;
-
-
 // 索引类型定义
 typedef enum {
-    INDEX_TYPE_INT64,
-    INDEX_TYPE_STRING,
-    INDEX_TYPE_OBJECT
+    INDEX_TYPE_INT64,       // 整数
+    INDEX_TYPE_STRING,      // 字符串
+    INDEX_TYPE_OBJECT       // 对象
 } IndexType;
 
 // 索引定义
 typedef struct {
-    int64 hash;
-    IndexType type;
-    void *data;
+    int64 hash;             // 哈希值
+    IndexType type;         // 索引类型
+    void *data;             // 数据
     struct IndexListNode *next; // 保留
 } Index;
 

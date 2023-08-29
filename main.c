@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "models.h"
 #include "utils/avl.h"
 #include "utils/wubi.h"
@@ -77,6 +76,56 @@ void generateTestData() {
     CourseSelection *selection4 = DB_selectCourse(stu->id, course4->id);
 }
 
+
+void printTrees(){
+    system("cls & MODE CON COLS=55 LINES=9999");
+
+    printf("user_name_Index:\n");
+    AVL_printInOrder(user_name_Index);
+    AVL_printPreOrder(user_name_Index);
+
+    printf("user_empId_Index:\n");
+    AVL_printInOrder(user_empId_Index);
+    AVL_printPreOrder(user_empId_Index);
+
+    printf("user_file_Index:\n");
+    AVL_printInOrder(user_file_Index);
+    AVL_printPreOrder(user_file_Index);
+
+    printf("course_name_Index:\n");
+    AVL_printInOrder(course_name_Index);
+    AVL_printPreOrder(course_name_Index);
+
+    printf("course_teacherId_Index:\n");
+    AVL_printInOrder(course_teacherId_Index);
+    AVL_printPreOrder(course_teacherId_Index);
+
+    printf("course_file_Index:\n");
+    AVL_printInOrder(course_file_Index);
+    AVL_printPreOrder(course_file_Index);
+
+    printf("selection_userId_Index:\n");
+    AVL_printInOrder(selection_userId_Index);
+    AVL_printPreOrder(selection_userId_Index);
+
+    printf("selection_courseId_Index:\n");
+    AVL_printInOrder(selection_courseId_Index);
+    AVL_printPreOrder(selection_courseId_Index);
+
+    printf("selection_userId_courseId_Index:\n");
+    AVL_printInOrder(selection_userId_courseId_Index);
+    AVL_printPreOrder(selection_userId_courseId_Index);
+
+    printf("selection_file_Index:\n");
+    AVL_printInOrder(selection_file_Index);
+    AVL_printPreOrder(selection_file_Index);
+
+    system("pause");
+
+    system("MODE CON COLS=55 LINES=30");
+}
+
+
 int main() {
     system("chcp 65001");
     system("chcp 936");
@@ -84,22 +133,13 @@ int main() {
     DB_Init();
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 
-    generateTestData();
-    system("pause");
-
-    printf("%lld\n", Hash_String(Hash_PreprocessString(Wubi_chn2wubi("中国历史"))));
-    printf("%lld\n", Hash_String(Wubi_chn2wubi("中国历史")));
-    Serv_User_login(status);
-
-//    NodeList *result = NULL;
-//    AVL_inOrderTraverse(course_name_Index, &result);
-//    for (NodeList *p = result; p != NULL; p = p->next) {
-//        printf("%lld\n", p->indexNode->index.hash);
-//    }
-//    system("pause");
+//    generateTestData();
 
 //    GlobalUser = DB_getUserByEmpId("admin");
 
+    printTrees();
+
+    Serv_User_login(status);
     // 打印主菜单
     UI_printMainMenu(0);
 

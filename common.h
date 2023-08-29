@@ -22,8 +22,6 @@
 #define COURSE_DESCRIPTION_PATTERN "^[\\D0-9]{5,250}$"
 // 课程类型正则表达式
 #define COURSE_TYPE_PATTERN "^[0-3]{1}$"
-// 学期正则表达式（长度为 4-10 字符，由字母、数字和-组成的字符串，建议格式<学年>-<学期>）
-#define SEMESTER_PATTERN "^[a-zA-Z0-9-]{4,10}$"
 // 数字标准正则表达式（大于0）
 #define NUMBER_PATTERN "^[+]{0,1}(\\d+)$"
 // 学分正则表达式（大于0的小数，最多小数点后2位）
@@ -32,9 +30,6 @@
 #define USER_ROLE_PATTERN "^[0-2]{1}$"
 // 用户姓名正则表达式
 #define USER_NAME_PATTERN "^[ 0-9a-zA-Z\x80-\xff·]{2,20}$"
-// 学校正则表达式（长度为3-50字符，由字母、数字、中文和空格组成的字符串）
-#define SCHOOL_PATTERN "^[a-zA-Z0-9()（）\x80-\xff-]{3,50}$"
-
 
 #define WORDS_Login_success "---- 用户登录 - 登陆成功 ----\n用户名：      %s\n姓  名：      %s\n角  色：      %s\n过期时间：    %s\n\n登陆成功，%s，欢迎您（按任意键进入主页）。\n\n"
 #define WORDS_Login_role_student "学生"
