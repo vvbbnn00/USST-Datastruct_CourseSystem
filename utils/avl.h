@@ -38,7 +38,7 @@ typedef struct NodeList {
  * @return
  */
 IndexListNode *Index_newIndexListNode(int64 hash, IndexType type, void *data) {
-    IndexListNode *node = (IndexListNode *) malloc(sizeof(IndexListNode));
+    IndexListNode *node = (IndexListNode *) calloc(1, sizeof(IndexListNode));
     if (!node) {
         return NULL;
     }
@@ -51,6 +51,56 @@ IndexListNode *Index_newIndexListNode(int64 hash, IndexType type, void *data) {
 
     return node;
 }
+
+
+/**
+ * 深复制链表
+ * @param node
+ * @return
+ */
+IndexListNode *IndexListNode_deepCopy(IndexListNode *node) {
+    IndexListNode *newNode = (IndexListNode *) calloc(1, sizeof(IndexListNode));
+    if (!newNode) {
+        return NULL;
+    }
+
+    if (node == NULL) {
+        return newNode;
+    }
+
+    newNode->index.hash = node->index.hash;
+    newNode->index.type = node->index.type;
+    newNode->index.data = node->index.data;
+    newNode->index.next = NULL;
+
+    for (IndexListNode *p = node->next, *q = newNode; p != NULL; p = p->next, q = q->next) {
+        q->next = Index_newIndexListNode(p->index.hash, p->index.type, p->index.data);
+    }
+
+
+    return newNode;
+}
+
+
+/**
+ * 删除索引链表
+ * @param node
+ */
+void IndexListNode_delete(IndexListNode *node) {
+    if (node == NULL) {
+        return;
+    }
+    IndexListNode *p = node;
+    while (p) {
+        IndexListNode *temp = p;
+        p = p->next;
+        if (temp->index.type == INDEX_TYPE_STRING) {
+            free(temp->index.data);
+        }
+        free(temp);
+    }
+}
+
 
 /**
  * 获取节点的高度
@@ -123,7 +173,7 @@ int AVL_getBalance(AVLNode *node) {
 AVLNode *AVL_insertNode(AVLNode *node, int64 hash, IndexType type, void *data) {
     // 正常的BST插入
     if (node == NULL) {
-        AVLNode *newNode = (AVLNode *) malloc(sizeof(AVLNode));
+        AVLNode *newNode = (AVLNode *) calloc(1, sizeof(AVLNode));
         if (!newNode) {
             return NULL;
         }
@@ -295,7 +345,7 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
     }
 
     // 特殊处理第一个节点，以便后面的循环处理
-    if ((int64)node1->index.data == delId) {
+    if ((int64) node1->index.data == delId) {
         IndexListNode *temp = node1->next;
         if (temp) {
             node1->index = temp->index;
@@ -331,11 +381,11 @@ IndexListNode *AVL_searchExact(AVLNode *root, int64 hash) {
 
     if (hash < root->list->index.hash) {
         return AVL_searchExact(root->left, hash);
-    } else if (hash > root->list->index.hash) {
-        return AVL_searchExact(root->right, hash);
-    } else {
-        return root->list;
     }
+    if (hash > root->list->index.hash) {
+        return AVL_searchExact(root->right, hash);
+    }
+    return root->list;
 }
 
 
@@ -358,7 +408,7 @@ int64 AVL_countNodes(AVLNode *root) {
  * @return
  */
 NodeList *NodeList_newNodeList(IndexListNode *indexNode) {
-    NodeList *node = (NodeList *) malloc(sizeof(NodeList));
+    NodeList *node = (NodeList *) calloc(1, sizeof(NodeList));
     if (!node) {
         return NULL;
     }
@@ -521,7 +571,7 @@ AVLNode *AVL_loadFromFileHelper(FILE *file) {
     fread(&type, sizeof(char), 1, file);
     void *data;
 
-    AVLNode *node = (AVLNode *) malloc(sizeof(AVLNode));
+    AVLNode *node = (AVLNode *) calloc(1, sizeof(AVLNode));
     if (!node) {
         perror("[AVL] Failed to allocate memory for AVLNode");
         return NULL;
@@ -605,7 +655,13 @@ void AVL_printInOrder_Helper(AVLNode *root) {
         return;
     }
     AVL_printInOrder_Helper(root->left);
-    printf("%lld: %p\n", root->list->index.hash, root->list->index.data);
+    printf("%lld: ", root->list->index.hash);
+    IndexListNode *list = root->list;
+    while (list) {
+        printf("%lld ", (int64) list->index.data);
+        list = list->next;
+    }
+    printf("\n");
     AVL_printInOrder_Helper(root->right);
 }
 
@@ -629,7 +685,13 @@ void AVL_printPreOrder_Helper(AVLNode *root) {
     if (root == NULL) {
         return;
     }
-    printf("%lld: %p\n", root->list->index.hash, root->list->index.data);
+    printf("%lld: ", root->list->index.hash);
+    IndexListNode *list = root->list;
+    while (list) {
+        printf("%lld ", (int64) list->index.data);
+        list = list->next;
+    }
+    printf("\n");
     AVL_printPreOrder_Helper(root->left);
     AVL_printPreOrder_Helper(root->right);
 }

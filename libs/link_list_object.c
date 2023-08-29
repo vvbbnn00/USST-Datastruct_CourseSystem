@@ -16,8 +16,7 @@
  * ¡¥±Ì≥ı ºªØ
  */
 LinkList_Object *linkListObject_Init() {
-    LinkList_Object *pt = malloc(sizeof(LinkList_Object));
-    memset(pt, 0, sizeof(LinkList_Object));
+    LinkList_Object *pt = calloc(1, sizeof(LinkList_Object));
     return pt;
 }
 

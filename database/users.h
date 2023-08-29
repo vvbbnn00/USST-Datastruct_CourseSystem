@@ -163,13 +163,13 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
  * 更新用户信息
  * @param user
  */
-void DB_updateUser(User *user) {
+char DB_updateUser(User *user) {
     // 更新索引
     User *origin = DB_getUserById(user->id);
 
     if (origin == NULL) {
         printf("[updateUser] 用户不存在\n");
-        return;
+        return 0;
     }
 
     if (strcmp(origin->name, user->name) != 0) {
@@ -180,6 +180,8 @@ void DB_updateUser(User *user) {
 
     DB_saveUser(user);
     DB_saveUserIndex();
+
+    return 1;
 }
 
 
@@ -187,38 +189,41 @@ void DB_updateUser(User *user) {
  * 删除用户
  * @param userId
  */
-void DB_deleteUser(int64 userId) {
+char DB_deleteUser(int64 userId) {
     User *user = DB_getUserById(userId);
     if (user == NULL) {
         printf("[deleteUser] 用户不存在\n");
-        return;
+        return 0;
     }
 
-    // 若是学生，删除选课记录
-    if (user->role == 0) {
-        // 删除用户的选课记录
-        IndexListNode *list = DB_getSelectionsByUserId(user->id);
-        for (IndexListNode *p = list; p != NULL; p = p->next) {
-            DB_withdrawCourse(user->id, ((CourseSelection *) p->index.data)->courseId);
+    // 删除用户的选课记录
+    IndexListNode *list1 = IndexListNode_deepCopy(DB_getSelectionsByUserId(user->id));
+    for (IndexListNode *p = list1; p != NULL; p = p->next) {
+        CourseSelection *selection = DB_getSelectionById((int64) p->index.data);
+        if (selection == NULL) {
+            continue;
         }
+        DB_withdrawCourse(user->id, selection->courseId);
     }
+    IndexListNode_delete(list1);
 
-    // 若是教师，删除课程
-    if (user->role == 1) {
-        IndexListNode *list = DB_getCoursesByTeacherId(user->id);
-        for (IndexListNode *p = list; p != NULL; p = p->next) {
-            DB_deleteCourse(((Course *) p->index.data)->id);
-        }
+    // 删除课程，由于删除期间会修改索引，所以需要先获取课程列表
+    IndexListNode *list2 = IndexListNode_deepCopy(DB_getCoursesByTeacherId(user->id));
+    for (IndexListNode *p = list2; p != NULL; p = p->next) {
+        DB_deleteCourse((int64) p->index.data);
     }
+    IndexListNode_delete(list2);
 
     user_name_Index = AVL_deleteNodeById(user_name_Index, Hash_String(Wubi_chn2wubi(user->name)), user->id);
-    user_empId_Index = AVL_deleteNode(user_empId_Index, Hash_String(user->empId));
+    user_empId_Index = AVL_deleteNodeById(user_empId_Index, Hash_String(user->empId), user->id);
     user_ID_Index = AVL_deleteNode(user_ID_Index, user->id);
     user_file_Index = AVL_deleteNode(user_file_Index, user->id);
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/user/%lld.dat", user->id);
     remove(filePath);
     DB_saveUserIndex();
+
+    return 1;
 }
 
 

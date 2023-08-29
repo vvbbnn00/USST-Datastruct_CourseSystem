@@ -25,6 +25,8 @@ void DB_saveAutoIncrement();
 
 CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId);
 
+CourseSelection *DB_getSelectionById(int64 selectionId);
+
 
 int64 AUTO_INCREMENT_COURSE_ID = 1; // 自增的课程ID
 
@@ -56,8 +58,13 @@ Course *DB_getCourseById(int64 courseId) {
 
         IndexListNode *selections = DB_getSelectionsByCourseId(courseId);
         course->currentMembers = 0;
-        for (IndexListNode *p = selections; p != NULL; p = p->next) {
-            course->currentMembers++;
+
+        if (selections == NULL) {
+            course->currentMembers = 0;
+        } else {
+            for (IndexListNode *p = selections; p != NULL; p = p->next) {
+                course->currentMembers++;
+            }
         }
 
         // 插入索引
@@ -92,7 +99,7 @@ NodeList *DB_getCoursesByName(char *courseName) {
  * @return
  */
 IndexListNode *DB_getCoursesByTeacherId(int64 teacherId) {
-    return AVL_searchExact(course_teacherId_Index, teacherId)->next;
+    return AVL_searchExact(course_teacherId_Index, teacherId);
 }
 
 /**
@@ -210,10 +217,15 @@ void DB_deleteCourse(int64 courseId) {
     }
 
     // 删除选课记录
-    IndexListNode *list = DB_getSelectionsByCourseId(courseId);
+    IndexListNode *list = IndexListNode_deepCopy(DB_getSelectionsByCourseId(courseId));
     for (IndexListNode *p = list; p != NULL; p = p->next) {
-        DB_withdrawCourse(((CourseSelection *) p->index.data)->studentId, courseId);
+        CourseSelection *selection = DB_getSelectionById((int64) p->index.data);
+        if (selection == NULL) {
+            continue;
+        }
+        DB_withdrawCourse(selection->studentId, courseId);
     }
+    IndexListNode_delete(list);
 
     course_ID_Index = AVL_deleteNode(course_ID_Index, courseId);
     course_file_Index = AVL_deleteNode(course_file_Index, courseId);

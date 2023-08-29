@@ -25,7 +25,7 @@ char *getFormatTimeString_(char *format, time_t timestamp) {
     char buffer[strlen(format) + 50];
     time_info = localtime(&timestamp);
     strftime(buffer, strlen(format) + 50, format, time_info);
-    char *str_buffer = malloc(strlen(format) + 51);
+    char *str_buffer = calloc(strlen(format) + 51, sizeof(char));
     strcpy(str_buffer, buffer);
     return str_buffer;
 }

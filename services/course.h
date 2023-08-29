@@ -248,6 +248,13 @@ void printStudentCourseSelection() {
                     break;
             }
         }
+
+        if (tmp->course.teacher == NULL) {
+            User tmp_user;
+            strcpy(tmp_user.name, "未知");
+            tmp->course.teacher = &tmp_user;
+        }
+
         printf("[%4s]%3d/%-3d   %-35lld%-35s%-10.2f%-12s\n",
                __getCourseStatus(tmp->status),
                tmp->course.currentMembers,
@@ -631,7 +638,7 @@ void printAllCourses(int scene) {
                 printf("[错误] 无法获取课程信息（课程ID=%lld）\n", (int64) j->indexNode->index.data);
                 continue;
             }
-            Course *insert = memcpy(malloc(sizeof(Course)), course_data_pt, sizeof(Course));
+            Course *insert = memcpy(calloc(1, sizeof(Course)), course_data_pt, sizeof(Course));
             linkListObject_Append(course_data_list, insert);
         }
     }
@@ -649,6 +656,13 @@ void printAllCourses(int scene) {
     for (LinkList_Node *pt = course_data_list->head; pt != NULL; pt = pt->next) {
         Course *tmp = pt->data;
         if (pt == selectedRow) SetConsoleTextAttribute(windowHandle, 0x70);
+
+        if (tmp->teacher == NULL) {
+            User tmp_user;
+            strcpy(tmp_user.name, "未知");
+            tmp->teacher = &tmp_user;
+        }
+
         printf("%-35lld%-35s%-10.2f%-10s%-12s\n",
                tmp->id,
                tmp->courseName,
@@ -873,7 +887,7 @@ void printStudentList(Course *courseData) {
         cnt += 1;
         if (cnt > (page - 1) * page_size && cnt <= (page - 1) * page_size + page_size) {
             CourseSelection *courseSelection = DB_getSelectionById((int64) j->index.data);
-            struct teacherCourseSelection *insert = malloc(sizeof(struct teacherCourseSelection));
+            struct teacherCourseSelection *insert = calloc(1, sizeof(struct teacherCourseSelection));
             insert->student = *courseSelection->student;
             insert->selection_time = courseSelection->selectionTime;
             insert->course = *courseSelection->course;

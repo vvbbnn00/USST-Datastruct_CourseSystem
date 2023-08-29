@@ -35,7 +35,7 @@ char __inAvailableCharset(char c) {
  * @return
  */
 char *Serv_User_getUsername() {
-    char *username = malloc(21); // 用户名最长20位
+    char *username = calloc(21, sizeof(char)); // 用户名最长20位
     memset(username, 0, 21);
     int i = 0, t;
     char c;
@@ -70,7 +70,7 @@ char *Serv_User_getUsername() {
  * @return
  */
 char *Serv_User_getPassword(char do_exit) {
-    char *password = malloc(33); //存储密码
+    char *password = calloc(33, sizeof(char)); //存储密码
     memset(password, 0, 33);
     int i = 0, t; //记录密码长度
     char c; //用于实现密码隐式输入
@@ -394,9 +394,19 @@ void editUser(User *_user) {
             printf("\n[提示] 正在请求...\n");
 
             if (action == 1) {
-                DB_registerUser(user->name, user->empId, user->passwd, user->role, user->contact);
+                User *ret = DB_registerUser(user->name, user->empId, user->passwd, user->role, user->contact);
+                if (ret == NULL) {
+                    printf("[提交失败] 用户新增失败（按任意键返回编辑）\n");
+                    getch();
+                    goto EditUser_Refresh;
+                }
             } else {
-                DB_updateUser(user);
+                char ret = DB_updateUser(user);
+                if (ret == 0) {
+                    printf("[提交失败] 用户修改失败（按任意键返回编辑）\n");
+                    getch();
+                    goto EditUser_Refresh;
+                }
             }
 
             printf("[提交成功] 用户修改/新增成功（按任意键返回用户列表）\n");
@@ -455,7 +465,7 @@ void printAllUsers() {
         IndexListNode *node = pt->indexNode;
         int64 id = (int64) node->index.data;
         User *user = DB_getUserById(id);
-        User *userInsert = memcpy(malloc(sizeof(User)), user, sizeof(User));
+        User *userInsert = memcpy(calloc(1, sizeof(User)), user, sizeof(User));
         if (user == NULL) continue;
         linkListObject_Append(user_data_list, userInsert);
     }
@@ -562,9 +572,13 @@ void printAllUsers() {
                 goto User_GetAndDisplay;
             }
 
-            // TODO
+            char ret = DB_deleteUser(pt->id);
+            if (ret == 0) {
+                printf("[删除失败] 用户 %s(%s) 删除失败（按任意键继续）。\n", pt->name, pt->empId);
+            } else {
+                printf("[删除成功] 用户 %s(%s) 已被删除（按任意键继续）。\n", pt->name, pt->empId);
+            }
 
-            printf("[删除成功] 用户 %s(%s) 已被删除（按任意键继续）。\n", pt->name, pt->empId);
             getch();
             goto User_GetAndDisplay;
         }

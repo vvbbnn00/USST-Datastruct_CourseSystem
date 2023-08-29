@@ -133,13 +133,13 @@ int main() {
     DB_Init();
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 
-//    generateTestData();
+    generateTestData();
 
-//    GlobalUser = DB_getUserByEmpId("admin");
+    GlobalUser = DB_getUserByEmpId("admin");
 
     printTrees();
 
-    Serv_User_login(status);
+//    Serv_User_login(status);
     // 打印主菜单
     UI_printMainMenu(0);
 
