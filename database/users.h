@@ -185,7 +185,7 @@ void DB_deleteUser(int64 userId) {
         }
     }
 
-    user_name_Index = AVL_deleteNode(user_name_Index, Hash_String(Wubi_chn2wubi(user->name)));
+    user_name_Index = AVL_deleteNodeById(user_name_Index, Hash_String(Wubi_chn2wubi(user->name)), user->id);
     user_empId_Index = AVL_deleteNode(user_empId_Index, Hash_String(user->empId));
     user_ID_Index = AVL_deleteNode(user_ID_Index, user->id);
     user_file_Index = AVL_deleteNode(user_file_Index, user->id);

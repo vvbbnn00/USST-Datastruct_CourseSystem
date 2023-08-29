@@ -66,7 +66,7 @@ typedef struct {
     int64 hash;
     IndexType type;
     void *data;
-    struct IndexListNode *next; // 用于处理重复关键字
+    struct IndexListNode *next; // 保留
 } Index;
 
 #endif

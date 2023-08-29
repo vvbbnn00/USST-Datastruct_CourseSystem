@@ -16,7 +16,7 @@ typedef struct IndexListNode {
 
 // AVL树节点定义
 typedef struct AVLNode {
-    IndexListNode *list; // 头节点的列表
+    IndexListNode *list;
     int height;
     struct AVLNode *left;
     struct AVLNode *right;
@@ -28,7 +28,7 @@ typedef struct NodeList {
 } NodeList;
 
 // 创建一个新的Index节点
-IndexListNode *Index_newIndexListNode(int64_t hash, IndexType type, void *data) {
+IndexListNode *Index_newIndexListNode(int64 hash, IndexType type, void *data) {
     IndexListNode *node = (IndexListNode *) malloc(sizeof(IndexListNode));
     if (!node) {
         return NULL;
@@ -88,7 +88,7 @@ int AVL_getBalance(AVLNode *node) {
 }
 
 // 插入节点
-AVLNode *AVL_insertNode(AVLNode *node, int64_t hash, IndexType type, void *data) {
+AVLNode *AVL_insertNode(AVLNode *node, int64 hash, IndexType type, void *data) {
     // 正常的BST插入
     if (node == NULL) {
         AVLNode *newNode = (AVLNode *) malloc(sizeof(AVLNode));
@@ -158,7 +158,7 @@ AVLNode *AVL_minValueNode(AVLNode *node) {
 }
 
 // 删除指定值的节点
-AVLNode *AVL_deleteNode(AVLNode *root, int64_t hash) {
+AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
     if (root == NULL) {
         return root;
     }
@@ -236,7 +236,48 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64_t hash) {
 }
 
 
-IndexListNode *AVL_searchExact(AVLNode *root, int64_t hash) {
+/**
+ * 删除包含特定ID的索引节点，若删除后链表为空，则删除整个AVL节点
+ *
+ * @param root AVL树的根节点
+ * @param hash 要删除的节点的哈希值
+ * @param delId 要删除的索引ID
+ * @return 返回操作后的AVL树的根节点
+ */
+AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
+    IndexListNode *AVL_searchExact(AVLNode *root, int64 hash);
+    IndexListNode *node1 = AVL_searchExact(root, hash);
+
+    // 检查查找是否成功
+    if (node1 == NULL) {
+        return root;
+    }
+
+    // 特殊处理第一个节点，以便后面的循环处理
+    if ((int64)node1->index.data == delId) {
+        IndexListNode *temp = node1->next;
+        if (temp) {
+            node1->index = temp->index;
+            node1->next = temp->next;
+            free(temp);
+            return root;
+        } else {
+            return AVL_deleteNode(root, hash);
+        }
+    }
+
+    // 检查链表后面的节点
+    for (IndexListNode *prev = node1, *n = node1->next; n != NULL; prev = n, n = n->next) {
+        if ((int64) n->index.data == delId) {
+            prev->next = n->next;
+            free(n);
+            break;
+        }
+    }
+    return root;
+}
+
+IndexListNode *AVL_searchExact(AVLNode *root, int64 hash) {
     if (root == NULL) {
         return NULL;
     }
@@ -301,7 +342,7 @@ void AVL_inOrderTraverse(AVLNode *root, NodeList **resultList) {
 
 
 // 中序遍历并在给定范围内查找节点
-void AVL_inOrderSearch(AVLNode *root, int64_t startHash, int64_t endHash, NodeList **resultList) {
+void AVL_inOrderSearch(AVLNode *root, int64 startHash, int64 endHash, NodeList **resultList) {
     if (root == NULL) {
         return;
     }
@@ -327,7 +368,7 @@ void AVL_inOrderSearch(AVLNode *root, int64_t startHash, int64_t endHash, NodeLi
     AVL_inOrderSearch(root->right, startHash, endHash, resultList);
 }
 
-NodeList *AVL_findNodesInRange(AVLNode *root, int64_t startHash, int64_t endHash) {
+NodeList *AVL_findNodesInRange(AVLNode *root, int64 startHash, int64 endHash) {
     NodeList *resultList = NULL;
     AVL_inOrderSearch(root, startHash, endHash, &resultList);
     return resultList;
@@ -350,7 +391,7 @@ void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
         case INDEX_TYPE_INT64: {
             // printf("写入节点0：%lld\n", node->list->index.hash);
             fwrite("0", sizeof(char), 1, file); // IndexType = 0
-            // 将List中的Index转换为int64_t并写入
+            // 将List中的Index转换为int64并写入
             for (IndexListNode *p = node->list; p != NULL; p = p->next) {
                 fwrite(&p->index.data, sizeof(int64), 1, file);
                 if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
@@ -362,7 +403,7 @@ void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
             int64 len = (int64) strlen(node->list->index.data);
             fwrite("1", sizeof(char), 1, file); // IndexType = 1
             for (IndexListNode *p = node->list; p != NULL; p = p->next) {
-                fwrite(&len, sizeof(int64_t), 1, file); // 写入字符串长度
+                fwrite(&len, sizeof(int64), 1, file); // 写入字符串长度
                 fwrite(p->index.data, sizeof(char), len, file);
                 if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
             }
@@ -391,8 +432,8 @@ void AVL_saveToFile(AVLNode *root, const char *filename) {
 
 // 递归地从文件读取并重建AVL树
 AVLNode *AVL_loadFromFileHelper(FILE *file) {
-    int64_t hash;
-    fread(&hash, sizeof(int64_t), 1, file);
+    int64 hash;
+    fread(&hash, sizeof(int64), 1, file);
 
     if (hash == INT64_MIN) {
         return NULL;
@@ -413,14 +454,14 @@ AVLNode *AVL_loadFromFileHelper(FILE *file) {
     do {
         switch (type) {
             case '0': {
-                fread(&data, sizeof(int64_t), 1, file);
+                fread(&data, sizeof(int64), 1, file);
                 indexType = INDEX_TYPE_INT64;
                 break;
             }
             case '1': {
                 int64 len;
                 indexType = INDEX_TYPE_STRING;
-                fread(&len, sizeof(int64_t), 1, file);
+                fread(&len, sizeof(int64), 1, file);
                 char *data1 = calloc(len + 1, sizeof(char));
                 fread(data1, sizeof(char), len, file);
                 data = data1;
@@ -439,11 +480,11 @@ AVLNode *AVL_loadFromFileHelper(FILE *file) {
             node->list = newNode;
         }
         int64 signal;
-        fread(&signal, sizeof(int64_t), 1, file);
+        fread(&signal, sizeof(int64), 1, file);
         if (signal == INT64_MIN + 1) {
             continue;
         } else {
-            // 回退一个int64_t
+            // 回退一个int64
             fseek(file, -8, SEEK_CUR);
             break;
         }

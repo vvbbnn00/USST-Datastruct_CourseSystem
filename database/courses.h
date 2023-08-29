@@ -187,7 +187,7 @@ void DB_updateCourse(Course *course) {
     int64 hashOld = Hash_String(Wubi_chn2wubi(DB_getCourseById(course->id)->courseName));
     int64 hashNew = Hash_String(Wubi_chn2wubi(course->courseName));
 
-    course_name_Index = AVL_deleteNode(course_name_Index, hashOld);
+    course_name_Index = AVL_deleteNodeById(course_name_Index, hashOld, course->id);
     course_name_Index = AVL_insertNode(course_name_Index, hashNew, INDEX_TYPE_INT64,
                                        (void *) course->id);
 
@@ -216,9 +216,14 @@ void DB_deleteCourse(int64 courseId) {
     }
 
     course_ID_Index = AVL_deleteNode(course_ID_Index, courseId);
-    course_name_Index = AVL_deleteNode(course_name_Index, Hash_String(DB_getCourseById(courseId)->courseName));
-    course_teacherId_Index = AVL_deleteNode(course_teacherId_Index, DB_getCourseById(courseId)->teacherId);
     course_file_Index = AVL_deleteNode(course_file_Index, courseId);
+
+
+    course_name_Index = AVL_deleteNodeById(course_name_Index, Hash_String(DB_getCourseById(courseId)->courseName),
+                                           courseId);
+    course_teacherId_Index = AVL_deleteNodeById(course_teacherId_Index, DB_getCourseById(courseId)->teacherId,
+                                                courseId);
+
 
     // и╬ЁЩ©нЁлнд╪Ч
     char *filePath = calloc(100, sizeof(char));

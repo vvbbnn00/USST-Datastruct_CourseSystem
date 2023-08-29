@@ -271,43 +271,16 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
         return NULL;
     }
     selection_ID_Index = AVL_deleteNode(selection_ID_Index, selection->id);
-    selection_courseId_Index = AVL_deleteNode(selection_courseId_Index, courseId);
     char *filePath = calloc(100, sizeof(char));
 
     // 更新索引 - userId
-    IndexListNode *node1 = AVL_searchExact(selection_userId_Index, userId);
-    for (IndexListNode *n = node1; n != NULL; n = n->next) {
-        if (n->index.data == (void *) selection->id) {
-            if (n->next) {
-                n->index = n->next->index;
-                n->next = n->next->next;
-                free(n->next);
-            } else {
-                // 退课后该用户无其他选课
-                selection_userId_Index = AVL_deleteNode(selection_userId_Index, userId);
-            }
-            break;
-        }
-    }
+    selection_userId_Index = AVL_deleteNodeById(selection_userId_Index, userId, selection->id);
 
     // 更新索引 - courseId
-    IndexListNode *node2 = AVL_searchExact(selection_courseId_Index, courseId);
-    for (IndexListNode *n = node2; n != NULL; n = n->next) {
-        if (n->index.data == (void *) selection->id) {
-            if (n->next) {
-                n->index = n->next->index;
-                n->next = n->next->next;
-                free(n->next);
-            } else {
-                // 退课后该课程无其他选课
-                selection_courseId_Index = AVL_deleteNode(selection_courseId_Index, courseId);
-            }
-            break;
-        }
-    }
+    selection_courseId_Index = AVL_deleteNodeById(selection_courseId_Index, courseId, selection->id);
 
     // 更新索引 - userId+courseId
-    selection_userId_courseId_Index = AVL_deleteNode(selection_userId_courseId_Index, Hash_String(string));
+    selection_userId_courseId_Index = AVL_deleteNodeById(selection_userId_courseId_Index, Hash_String(string), selection->id);
 
     // 更新索引 - file
     selection_file_Index = AVL_deleteNode(selection_file_Index, selection->id);
