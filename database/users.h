@@ -82,6 +82,18 @@ NodeList *DB_getUsersByName(char *name) {
     return list;
 }
 
+
+/**
+ * 获取所有用户
+ * @return
+ */
+NodeList *DB_getAllUsers() {
+    NodeList *list = NULL;
+    AVL_inOrderTraverse(user_file_Index, &list);
+    return list;
+}
+
+
 /**
  * 保存用户
  * @param user
@@ -152,6 +164,20 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
  * @param user
  */
 void DB_updateUser(User *user) {
+    // 更新索引
+    User *origin = DB_getUserById(user->id);
+
+    if (origin == NULL) {
+        printf("[updateUser] 用户不存在\n");
+        return;
+    }
+
+    if (strcmp(origin->name, user->name) != 0) {
+        user_name_Index = AVL_deleteNodeById(user_name_Index, Hash_String(Wubi_chn2wubi(origin->name)), user->id);
+        user_name_Index = AVL_insertNode(user_name_Index, Hash_String(Wubi_chn2wubi(user->name)), INDEX_TYPE_INT64,
+                                         (void *) user->id);
+    }
+
     DB_saveUser(user);
     DB_saveUserIndex();
 }

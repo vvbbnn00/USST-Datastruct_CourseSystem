@@ -19,7 +19,6 @@
 #include "ui.h"
 
 User *GlobalUser;
-const char *SORT_METHOD_COURSE[3] = {"默认排序", "学分降序", "学分升序"}; // 显示排序顺序
 const char *NUMBER_CAPITAL[10] = {"零", "一", "二", "三", "四", "五", "六", "日", "八", "九"};
 const char *LECTURE_TYPE[4] = {"必修", "选修", "公选", "辅修"};
 
@@ -344,7 +343,7 @@ void printStudentCourseSelection() {
             selectedRow = 0;
             goto GetCourseAndDisplay;
         case 13: // 选课选项
-            printf("[提示] 正在请求...");
+            printf("[提示] 正在请求...\n");
             switch (selected_selection->status) {
                 case 0: {
                     CourseSelection *selection = DB_selectCourse(GlobalUser->id, selected_course->id);

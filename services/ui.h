@@ -25,6 +25,8 @@ char *Serv_User_getUserRole(int role);
 
 void Serv_changePassword();
 
+void printAllUsers();
+
 
 /**
  * 设置程序标题（GBK）
@@ -241,13 +243,13 @@ void UI_doMainMenuActions(int command) {
         case 23:
             Serv_changePassword();
             break;
-        // 退出登录
+            // 退出登录
         case 6:
         case 14:
         case 24:
             GlobalUser = NULL;
             longjmp(GLOBAL_goto_login, 1);
-        // 退出程序
+            // 退出程序
         case 7:
         case 15:
         case 25:
@@ -268,6 +270,9 @@ void UI_doMainMenuActions(int command) {
             break;
         case 11:
             printAllCourses(1);
+            break;
+        case 22:
+            printAllUsers();
             break;
         default:
             break;

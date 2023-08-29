@@ -256,5 +256,333 @@ void Serv_changePassword() {
 }
 
 
+/**
+ * 新增用户
+ * @return 取消则返回NULL，否则返回用户指针
+ */
+User *addUser() {
+    system("chcp 936>nul & cls & MODE CON COLS=75 LINES=55");
+    printf("\n");
+    UI_printHeader(69);
+    printf("\n");
+    UI_printInMiddle("======= 用户·新增用户 =======\n", 71);
+
+    User *user = calloc(1, sizeof(User));
+    if (UI_inputStringWithRegexCheck("[新增用户] 请输入用户学号（由3-15位的字母、数字组成）\n",
+                                     USER_PATTERN,
+                                     user->empId,
+                                     15) == -1)
+        goto CancelAdd;
+    if (UI_inputStringWithRegexCheck(
+            "[新增用户] 请设置用户初始密码（由8-20为字母、数字、字符组成，三种类型至少同时出现两种）\n",
+            PASSWD_PATTERN,
+            user->passwd,
+            20) == -1)
+        goto CancelAdd;
+    if (UI_inputStringWithRegexCheck("[新增用户] 请设置用户姓名（由2-20位的中文、英文等组成）\n",
+                                     USER_NAME_PATTERN,
+                                     user->name,
+                                     20) == -1)
+        goto CancelAdd;
+    if (UI_inputStringWithRegexCheck("[新增用户] 请设置联系方式（由2-20位的中文、英文等组成）\n",
+                                     USER_NAME_PATTERN,
+                                     user->contact,
+                                     20) == -1)
+        goto CancelAdd;
+    strcpy(user->passwd, calcHexHMACSHA256(user->passwd, SECRET_KEY));
+    if (UI_inputIntWithRegexCheck("[新增用户] 请设置用户角色：0-学生、1-教师、2-管理员\n",
+                                  USER_ROLE_PATTERN,
+                                  &user->role) == -1)
+        goto CancelAdd;
+    goto Return;
+
+    CancelAdd:  // 取消添加
+    free(user);
+    user = NULL;
+
+    Return:  // 返回数据
+    return user;
+}
+
+
+/**
+ * 新增/修改用户
+ *
+ * @param _user 当为NULL时，新增用户，否则为修改用户
+ * @return
+ */
+void editUser(User *_user) {
+    // 如无用户信息，则新增用户
+    int action = 0;
+    User *user = _user;
+
+    if (user == NULL) {
+        user = addUser();
+        action = 1;
+        if (user == NULL) {
+            return;
+        }
+    }
+
+    int counter = 0, selected = 0, key;
+
+    EditUser_Refresh:
+
+    counter = 0;
+    system("chcp 936>nul & cls & MODE CON COLS=75 LINES=55");
+    printf("\n");
+    UI_printHeader(69);
+    printf("\n");
+    UI_printInMiddle("======= 用户·新增/修改用户 =======\n\n", 71);
+
+    UI_selfPlusPrint("\t\t用户UID       %lld\n", &counter, selected, user->id); // 0
+    UI_selfPlusPrint("\t\t用户学号      %s\n", &counter, selected, user->empId); // 1
+    UI_selfPlusPrint("\t\t用户姓名      %s\n", &counter, selected, user->name); // 2
+    UI_selfPlusPrint("\t\t用户角色      %s\n", &counter, selected, Serv_User_getUserRole(user->role)); // 3
+    UI_selfPlusPrint("\t\t最后登录时间  %s\n", &counter, selected, getFormatTimeString(user->lastLoginTime)); // 4
+    UI_selfPlusPrint("\t\t用户密码      [可重置]\n", &counter, selected); // 5
+
+    printf("\n");
+    UI_printInMiddle("<Enter>修改选中行 <Y>提交修改 <Esc>取消修改", 71);
+
+    EditCourse_GetKey:
+
+    key = _getch();
+    switch (key) {
+        case 224:
+            key = _getch();
+            switch (key) {
+                case 80: // 下
+                    if (selected < 6) selected++;
+                    else selected = 0;
+                    goto EditUser_Refresh;
+                case 72: // 上
+                    if (selected > 0) selected--;
+                    else selected = 6;
+                    goto EditUser_Refresh;
+                default:
+                    break;
+            }
+            break;
+        case 13:
+            switch (selected) {
+                case 2:
+                    UI_inputStringWithRegexCheck("[修改用户] 请设置用户姓名（由2-20位的中文、英文等组成）\n",
+                                                 USER_NAME_PATTERN,
+                                                 user->name,
+                                                 20);
+                    break;
+                case 3:
+                    UI_inputIntWithRegexCheck("[修改用户] 请设置用户角色：0-学生、1-教师、2-管理员\n",
+                                              USER_ROLE_PATTERN,
+                                              &user->role);
+                    break;
+                case 5:
+                    UI_inputStringWithRegexCheck(
+                            "[修改用户] 请设置用户密码（由8-20为字母、数字、字符组成，三种类型至少同时出现两种）\n",
+                            PASSWD_PATTERN,
+                            user->passwd,
+                            20);
+                    strcpy(user->passwd, calcHexHMACSHA256(user->passwd, SECRET_KEY));
+                    break;
+                default:
+                    break;
+            }
+            goto EditUser_Refresh;
+        case 'y':
+        case 'Y': {
+            printf("\n[提示] 正在请求...\n");
+
+            if (action == 1) {
+                DB_registerUser(user->name, user->empId, user->passwd, user->role, user->contact);
+            } else {
+                DB_updateUser(user);
+            }
+
+            printf("[提交成功] 用户修改/新增成功（按任意键返回用户列表）\n");
+            getch();
+            goto GC_COLLECT;
+        }
+            break;
+        case 27:
+            goto GC_COLLECT;
+        default:
+            break;
+    }
+    goto EditCourse_GetKey;
+
+    GC_COLLECT:
+    if (_user == NULL) free(user);
+}
+
+
+/**
+ * 输出全体用户信息
+ */
+void printAllUsers() {
+    HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    char search_kw[36] = "";
+    int total, page = 1, max_page, page_size = 15, current_total;
+
+    LinkList_Node *selectedRow = NULL; // 被选中的行
+    LinkList_Object *user_data_list = NULL;
+
+    User_GetAndDisplay:
+
+    total = 0;
+
+    system("chcp 936>nul & cls & MODE CON COLS=130 LINES=50");
+    // ... 请求过程
+    printf("[提示] 正在请求...\n");
+
+    NodeList *result;
+    if (strlen(search_kw) > 0) {
+        result = DB_getUsersByName(search_kw);
+    } else {
+        result = DB_getAllUsers();
+    }
+    for (NodeList *pt = result; pt != NULL; pt = pt->next) {
+        total++;
+    }
+
+    max_page = (total / page_size) + ((total % page_size) ? 1 : 0);
+    if (page > max_page) page = max_page;
+    current_total = (page == max_page) ? (total % page_size) : page_size;
+
+    user_data_list = linkListObject_Init();
+    for (NodeList *pt = result; pt != NULL; pt = pt->next) {
+        IndexListNode *node = pt->indexNode;
+        int64 id = (int64) node->index.data;
+        User *user = DB_getUserById(id);
+        User *userInsert = memcpy(malloc(sizeof(User)), user, sizeof(User));
+        if (user == NULL) continue;
+        linkListObject_Append(user_data_list, userInsert);
+    }
+
+    if (user_data_list->head != NULL) selectedRow = user_data_list->head;
+    else selectedRow = NULL;
+
+    User_Refresh:
+
+    system("cls");
+    printf("\n");
+    UI_printHeader(77);
+    printf("\n");
+    UI_printInMiddle("======= 用户·用户管理 =======\n", 80);
+    printf("%-10s%-20s%-17s%-8s%-20s\n", "用户UID", "姓名", "学工号", "角色", "最后登录时间");
+    printf("-----------------------------------------------------------------------------------------\n");
+    for (LinkList_Node *pt = user_data_list->head; pt != NULL; pt = pt->next) {
+        User *tmp = pt->data;
+        if (pt == selectedRow) SetConsoleTextAttribute(windowHandle, 0x70);
+        printf("%-10lld%-20s%-17s%-8s%-20s\n",
+               tmp->id,
+               tmp->name,
+               tmp->empId,
+               Serv_User_getUserRole(tmp->role),
+               getFormatTimeString(tmp->lastLoginTime));
+        SetConsoleTextAttribute(windowHandle, 0x07);
+        if (pt->next == NULL) { // 链表的最后一个节点
+            printf("\n");
+        }
+    }
+    for (int i = 0; i < page_size - current_total; i++) printf("\n"); // 补齐页面
+    printf("\n");
+    UI_printInMiddle("=============================\n", 89);
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+    printf("\n  ");
+    printf(" <A>新建用户 <Enter>编辑用户 <D>删除用户 <K>用户模糊查询");
+    printf(" <Esc>返回主菜单\n");
+
+    if (selectedRow == NULL) {
+        if (strlen(search_kw)) {
+            UI_printErrorData("没有查询到符合条件的用户");
+            strcpy(search_kw, "");
+            goto User_GetAndDisplay;
+        } else {
+            UI_printErrorData("暂无用户（这是不正常的，你是如何登录进来的？）");
+            goto GC_Collect;
+        }
+    }
+
+    int keyboard_press;
+
+    GetKey:
+    keyboard_press = _getch();
+    switch (keyboard_press) {
+        case 224:
+            keyboard_press = _getch();
+            switch (keyboard_press) {
+                case 80: // 下
+                    if (selectedRow->next == NULL) selectedRow = user_data_list->head;
+                    else selectedRow = selectedRow->next;
+                    goto User_Refresh;
+                case 72: // 上
+                    if (selectedRow->prev == NULL) selectedRow = user_data_list->foot;
+                    else selectedRow = selectedRow->prev;
+                    goto User_Refresh;
+                case 75: // 左
+                    page = (page > 1) ? (page - 1) : 1;
+                    selectedRow = 0;
+                    goto User_GetAndDisplay;
+                case 77: // 右
+                    page = (page < max_page) ? (page + 1) : (max_page);
+                    selectedRow = 0;
+                    goto User_GetAndDisplay;
+                default:
+                    break;
+            }
+            break;
+        case 'k': // 搜索关键词
+        case 'K':
+            printf("\n[模糊搜索] 请输入关键词（以\"Enter\"键结束）：");
+            gets_safe(search_kw, 35);
+            fflush(stdin);
+            selectedRow = 0;
+            goto User_GetAndDisplay;
+        case 'A':
+        case 'a': // 新建用户
+            editUser(NULL);
+            goto User_GetAndDisplay;
+        case 'D':
+        case 'd': // 删除用户
+        {
+            User *pt = selectedRow->data;
+            printf("\n[确认删除] 您确定要删除用户 %s(%s) 吗？（不建议删除用户。若要继续，请输入该用户的学工号:%s确认）\n",
+                   pt->name,
+                   pt->empId, pt->empId);
+            char input_char[31];
+            gets_safe(input_char, 30);
+            if (strcmp(input_char, pt->empId) != 0) {
+                printf("学工号不一致，已取消操作（按任意键继续）。\n");
+                getch();
+                goto User_GetAndDisplay;
+            }
+
+            // TODO
+
+            printf("[删除成功] 用户 %s(%s) 已被删除（按任意键继续）。\n", pt->name, pt->empId);
+            getch();
+            goto User_GetAndDisplay;
+        }
+        case 13: // 编辑用户
+            editUser(selectedRow->data);
+            goto User_GetAndDisplay;
+        case 27:
+            goto GC_Collect;
+        default:
+            break;
+    }
+    goto GetKey;
+
+    GC_Collect:
+    linkListObject_Delete(user_data_list, 1);
+    free(user_data_list);
+    user_data_list = NULL;
+}
+
 
 #endif //COURSESYSTEM2023_USERS_SERVICE_H

@@ -393,8 +393,13 @@ void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
             fwrite("0", sizeof(char), 1, file); // IndexType = 0
             // 将List中的Index转换为int64并写入
             for (IndexListNode *p = node->list; p != NULL; p = p->next) {
+                if (p->index.data == NULL) {
+                    continue;
+                }
                 fwrite(&p->index.data, sizeof(int64), 1, file);
-                if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
+                if (p->next != NULL) {
+                    fwrite(&continueMarker, sizeof(int64), 1, file);
+                }
             }
             break;
         }
@@ -405,7 +410,9 @@ void AVL_saveToFileHelper(AVLNode *node, FILE *file) {
             for (IndexListNode *p = node->list; p != NULL; p = p->next) {
                 fwrite(&len, sizeof(int64), 1, file); // 写入字符串长度
                 fwrite(p->index.data, sizeof(char), len, file);
-                if (p->next != NULL) fwrite(&continueMarker, sizeof(int64), 1, file);
+                if (p->next != NULL) {
+                    fwrite(&continueMarker, sizeof(int64), 1, file);
+                }
             }
             break;
         }
