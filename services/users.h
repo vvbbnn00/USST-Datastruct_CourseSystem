@@ -133,6 +133,7 @@ int Serv_User_login(char status) {
     system("cls");
     system("@echo off");
     system("MODE CON COLS=55 LINES=30");
+    system("TITLE 课程管理系统 - 登录");
 
     UI_printHeader(55);
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(CourseSystem2023 VERSION 1.0.8)
+project(CourseSystem2023 VERSION 1.0.9)
 
 set(CMAKE_C_STANDARD 23)
 

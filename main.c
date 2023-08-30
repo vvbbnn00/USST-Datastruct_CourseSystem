@@ -132,6 +132,7 @@ void printTrees() {
 int main() {
     system("chcp 65001");
     system("chcp 936");
+    system("TITLE 课程管理系统 - " VERSION);
     Wubi_Init();
     DB_Init();
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
