@@ -45,7 +45,7 @@ User *DB_getUserById(int64 userId) {
         fread(user, sizeof(User), 1, fp);
         fclose(fp);
         // 插入索引
-        // user_ID_Index = AVL_insertNode(user_ID_Index, userId, INDEX_TYPE_OBJECT, user);
+        user_ID_Index = AVL_insertNode(user_ID_Index, userId, INDEX_TYPE_OBJECT, user);
         return user;
     }
     return (User *) node->index.data;
@@ -99,6 +99,9 @@ NodeList *DB_getAllUsers() {
  * @param user
  */
 void DB_saveUser(User *user) {
+    User *newUser = calloc(1, sizeof(User));
+    memcpy(newUser, user, sizeof(User));
+
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/user/%lld.dat", user->id);
     FILE *fp = fopen(filePath, "wb");
@@ -108,6 +111,9 @@ void DB_saveUser(User *user) {
     }
     fwrite(user, sizeof(User), 1, fp);
     fclose(fp);
+
+    // 重建索引
+    user_ID_Index = AVL_deleteNode(user_ID_Index, newUser->id);
 }
 
 /**

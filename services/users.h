@@ -341,6 +341,7 @@ void editUser(User *_user) {
     UI_selfPlusPrint("\t\t用户角色      %s\n", &counter, selected, Serv_User_getUserRole(user->role)); // 3
     UI_selfPlusPrint("\t\t最后登录时间  %s\n", &counter, selected, getFormatTimeString(user->lastLoginTime)); // 4
     UI_selfPlusPrint("\t\t用户密码      [可重置]\n", &counter, selected); // 5
+    UI_selfPlusPrint("\t\t联系方式      %s\n", &counter, selected, user->contact); // 6
 
     printf("\n");
     UI_printInMiddle("<Enter>修改选中行 <Y>提交修改 <Esc>取消修改", 71);
@@ -384,6 +385,13 @@ void editUser(User *_user) {
                             user->passwd,
                             20);
                     strcpy(user->passwd, calcHexHMACSHA256(user->passwd, SECRET_KEY));
+                    break;
+                case 6:
+                    UI_inputStringWithRegexCheck(
+                            "[修改用户] 请设置用户联系方式（由8-20为字母、数字、字符组成，三种类型至少同时出现两种）\n",
+                            USER_NAME_PATTERN,
+                            user->contact,
+                            20);
                     break;
                 default:
                     break;
@@ -477,20 +485,28 @@ void printAllUsers() {
 
     system("cls");
     printf("\n");
-    UI_printHeader(77);
+    UI_printHeader(92);
     printf("\n");
-    UI_printInMiddle("======= 用户·用户管理 =======\n", 80);
-    printf("%-10s%-20s%-17s%-8s%-20s\n", "用户UID", "姓名", "学工号", "角色", "最后登录时间");
-    printf("-----------------------------------------------------------------------------------------\n");
+
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+    printf("\n");
+
+    UI_printInMiddle("======= 用户·用户管理 =======\n", 95);
+    printf("%-10s%-20s%-17s%-8s%-25s%-20s\n", "用户UID", "姓名", "学工号", "角色", "最后登录时间", "联系方式");
+    printf("------------------------------------------------------------------------------------------------------------\n");
     for (LinkList_Node *pt = user_data_list->head; pt != NULL; pt = pt->next) {
         User *tmp = pt->data;
         if (pt == selectedRow) SetConsoleTextAttribute(windowHandle, 0x70);
-        printf("%-10lld%-20s%-17s%-8s%-20s\n",
+        printf("%-10lld%-20s%-17s%-8s%-25s%-20s\n",
                tmp->id,
                tmp->name,
                tmp->empId,
                Serv_User_getUserRole(tmp->role),
-               getFormatTimeString(tmp->lastLoginTime));
+               getFormatTimeString(tmp->lastLoginTime),
+               tmp->contact);
         SetConsoleTextAttribute(windowHandle, 0x07);
         if (pt->next == NULL) { // 链表的最后一个节点
             printf("\n");
@@ -499,13 +515,6 @@ void printAllUsers() {
     for (int i = 0; i < page_size - current_total; i++) printf("\n"); // 补齐页面
     printf("\n");
     UI_printInMiddle("=============================\n", 89);
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
-    printf("\n  ");
-    printf(" <A>新建用户 <Enter>编辑用户 <D>删除用户 <K>用户模糊查询");
-    printf(" <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         if (strlen(search_kw)) {
@@ -517,6 +526,10 @@ void printAllUsers() {
             goto GC_Collect;
         }
     }
+
+    printf("\n  ");
+    printf(" <A>新建用户 <Enter>编辑用户 <D>删除用户 <K>用户模糊查询");
+    printf(" <Esc>返回主菜单\n");
 
     int keyboard_press;
 

@@ -179,17 +179,27 @@ int UI_inputFloatWithRegexCheck(char *message, char *pattern, double *_dest) {
  */
 void UI_selfPlusPrint(char *format, int *counter, int selected, ...) {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (windowHandle == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "Error: Invalid handle value.");
+        return;
+    }
+
     if (*counter == selected) {
         SetConsoleTextAttribute(windowHandle, 0x70);
     }
 
+    // 不固定参数通过va_list保存，使用vprintf输出，可更好地封装print函数
     va_list args;
     va_start(args, selected);
-    // 不固定参数通过va_list保存，使用vprintf输出，可更好地封装print函数
-    vprintf(format, args);
+    int ret = vprintf(format, args);
     va_end(args);
 
+    if (ret < 0) {
+        fprintf(stderr, "Error: vprintf failed.");
+    }
+
     SetConsoleTextAttribute(windowHandle, 0x07);
+
     (*counter)++;
 }
 

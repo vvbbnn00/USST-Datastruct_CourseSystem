@@ -230,6 +230,13 @@ void printStudentCourseSelection() {
     printf("\n");
     UI_printHeader(102);
     printf("\n");
+
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s", search_kw); } else { printf("\n"); }
+    printf("[选课概况] 已选%.2f学分\n\n", current_score);
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n\n",
+           total, page, max_page);
+
     UI_printInMiddle("======= 课程·学生选课 =======\n", 104);
     printf("%-16s%-35s%-35s%-10s%-12s\n", "选课状态", "课程ID", "课程名称", "课程学分", "授课教师");
     printf("--------------------------------------------------------------------------------------------------------\n");
@@ -271,12 +278,6 @@ void printStudentCourseSelection() {
     for (int i = 0; i < page_size - current_total; i++) printf("\n"); // 补齐页面
     printf("\n");
     UI_printInMiddle("=============================\n", 104);
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s", search_kw); } else { printf("\n"); }
-    printf("  [选课概况] 已选%.2f学分\n\n", current_score);
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
-    printf("\n\t   <Enter>选课/退选 <K>课程模糊查询 <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         UI_printErrorData("暂无可选课程");
@@ -303,7 +304,7 @@ void printStudentCourseSelection() {
         default:
             break;
     }
-    printf("\t状  态：  %s[%d/%d人]%s%s%s%s\n",
+    printf("\t状    态：%s[%d/%d人]%s%s%s%s\n",
            __getCourseStatus(selected_selection->status),
            selected_course->currentMembers,
            selected_course->maxMembers,
@@ -312,7 +313,9 @@ void printStudentCourseSelection() {
            selected_selection->selection_time > 0 ? " - 选课时间：" : "",
            selected_selection->selection_time > 0 ?
            getFormatTimeString(selected_selection->selection_time) : "");
+
     SetConsoleTextAttribute(windowHandle, 0x07);
+    printf("\n <Enter>选课/退选 <K>课程模糊查询 <Esc>返回主菜单\n");
 
     int keyboard_press;
 
@@ -523,6 +526,7 @@ void printStudentLectureTable() {
         CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
         if (selection == NULL) continue;
         Course *course_data_pt = selection->course;
+        if (course_data_pt == NULL) continue;
         score_total += course_data_pt->points;
 
         for (int week = 0; week < 7; week++) {
@@ -650,6 +654,13 @@ void printAllCourses(int scene) {
     printf("\n");
     UI_printHeader(120);
     printf("\n");
+
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+    printf("\n");
+
     UI_printInMiddle("======= 课程·全校课表一览 =======\n", 122);
     printf("%-35s%-35s%-10s%-10s%-12s\n", "课程ID", "课程名称", "课程学分", "课程性质", "授课教师");
     printf("--------------------------------------------------------------------------------------------------------------------------\n");
@@ -677,18 +688,6 @@ void printAllCourses(int scene) {
     for (int i = 0; i < page_size - current_total; i++) printf("\n"); // 补齐页面
     printf("\n");
     UI_printInMiddle("=============================\n", 122);
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
-    printf("\n");
-    if (GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1)) { // 管理员可编辑课程
-        printf("<A>开设/新建课程 <Enter>编辑课程 <P>查看学生名单 <D>删除课程");
-    } else {
-        printf("\t  ");
-    }
-    printf(" <K>课程模糊查询");
-    printf(" <Esc>返回主菜单\n");
 
     if (selectedRow == NULL) {
         if (strlen(search_kw)) {
@@ -710,6 +709,21 @@ void printAllCourses(int scene) {
     }
 
     printCourseData(selectedRow->data);
+
+    printf("\n\n");
+    if (GlobalUser->role == 2) { // 管理员可编辑课程
+        printf("<A>开设/新建课程 <Enter>编辑课程 <D>删除课程");
+    } else {
+        printf("\t  ");
+    }
+
+    if (GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1)) { // 管理员和教师可查看学生名单
+        printf(" <P>查看学生名单");
+    }
+
+    printf(" <K>课程模糊查询");
+    printf(" <Esc>返回主菜单\n");
+
 
     int keyboard_press;
 
@@ -748,12 +762,12 @@ void printAllCourses(int scene) {
             goto GetCourseAndDisplay;
         case 'A':
         case 'a':
-            if (!(GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1))) break; // 权限判断
+            if (GlobalUser->role != 2) break; // 权限判断
             editCourse(NULL);
             goto GetCourseAndDisplay;
         case 'D':
         case 'd': // 删除课程
-            if (!(GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1))) break; // 权限判断
+            if (GlobalUser->role != 2) break; // 权限判断
             {
                 Course *pt = selectedRow->data;
                 printf("\n[确认删除] 您确定要删除课程 %s(%lld) 吗？（删除课程后，该课程所有的学生选课记录将被清空！若要继续，请输入该课程ID:%lld确认）\n",
@@ -782,7 +796,7 @@ void printAllCourses(int scene) {
             printStudentList((Course *) selectedRow->data);
             goto GetCourseAndDisplay;
         case 13: // 编辑课程
-            if (!(GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1))) break; // 权限判断
+            if (GlobalUser->role != 2) break; // 权限判断
             editCourse((Course *) selectedRow->data);
             goto GetCourseAndDisplay;
         case 27:
@@ -909,6 +923,11 @@ void printStudentList(Course *courseData) {
     printf("\n");
     UI_printHeader(99);
     printf("\n");
+
+    printf("    [课程名称] %s [课程ID] %lld\n\n", courseData->courseName, courseData->id);
+    printf("    [提示] 共%4d条数据，当前第%3d页，共%3d页\n\n    （左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+
     UI_printInMiddle("======= 课程·课程名单 =======\n", 101);
     printf("%-6s%-15s%-20s%-30s%-10s%-15s\n", "序号", "姓名", "学号", "选课时间", "成绩", "联系方式");
     printf("------------------------------------------------------------------------------------------------\n");
@@ -945,10 +964,7 @@ void printStudentList(Course *courseData) {
     for (int i = 0; i < page_size - current_total - 1; i++) printf("\n"); // 补齐页面
     printf("\n");
     UI_printInMiddle("=============================\n", 71);
-    printf("    [课程名称] %s [课程ID] %lld\n\n", courseData->courseName, courseData->id);
-    printf("    [提示] 共%4d条数据，当前第%3d页，共%3d页\n\n    （左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
-    printf("\n  ");
+    printf("\n\n  ");
     if (GlobalUser->role == 2) { // 管理员可编辑课程
         printf("<A>添加学生 <D>取消该学生选课 <I>批量导入学生");
     } else {
@@ -1017,7 +1033,8 @@ void printStudentList(Course *courseData) {
                 else if (courseSelection->score >= 60) stat_a60++;
                 else stat_a0++;
             }
-            printf("\n[成绩分段统计] 90分以上：%d人，80-89分：%d人，60-79分：%d人，60分以下：%d人\n", stat_a90, stat_a80, stat_a60,
+            printf("\n[成绩分段统计] 90分以上：%d人，80-89分：%d人，60-79分：%d人，60分以下：%d人\n", stat_a90, stat_a80,
+                   stat_a60,
                    stat_a0);
             getch();
             goto Teacher_Refresh;
@@ -1331,7 +1348,9 @@ void editCourse(Course *_course) {
                      course->teacherId);
     UI_selfPlusPrint("\t\t选修人数      %d/%d人\n", &counter, selected, course->currentMembers,
                      course->maxMembers);  // 8
-    UI_selfPlusPrint("\t\t课程学分      %.2f\n", &counter, selected, course->points);  // 9
+    char floatStr[10] = {0};
+    sprintf(floatStr, "%.2f", course->points);
+    UI_selfPlusPrint("\t\t课程学分      %s\n", &counter, selected, floatStr);  // 9
     UI_selfPlusPrint("\t\t课程学时      %d学时\n", &counter, selected, // 10
                      getTotalWeekHour(course->schedule) * (course->weekEnd - course->weekStart + 1));
 

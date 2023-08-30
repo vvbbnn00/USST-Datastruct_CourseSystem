@@ -135,7 +135,7 @@ int main() {
 
     generateTestData();
 
-    GlobalUser = DB_getUserByEmpId("admin");
+     GlobalUser = DB_getUserByEmpId("2135060620");
 
     printTrees();
 

@@ -68,7 +68,7 @@ Course *DB_getCourseById(int64 courseId) {
         }
 
         // 插入索引
-        // course_ID_Index = AVL_insertNode(course_ID_Index, courseId, INDEX_TYPE_OBJECT, course);
+        course_ID_Index = AVL_insertNode(course_ID_Index, courseId, INDEX_TYPE_OBJECT, course);
         return course;
     }
     return (Course *) node->index.data;
@@ -108,6 +108,8 @@ IndexListNode *DB_getCoursesByTeacherId(int64 teacherId) {
  */
 void DB_saveCourse(Course *course) {
     // 保存课程信息
+    Course *newCourse = calloc(1, sizeof(Course));
+    memcpy(newCourse, course, sizeof(Course));
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/course/%lld.dat", course->id);
     FILE *fp = fopen(filePath, "wb");
@@ -117,6 +119,8 @@ void DB_saveCourse(Course *course) {
     }
     fwrite(course, sizeof(Course), 1, fp);
     fclose(fp);
+    // 重建索引
+    course_ID_Index = AVL_deleteNode(course_ID_Index, newCourse->id);
 }
 
 /**

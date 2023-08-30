@@ -55,7 +55,7 @@ CourseSelection *DB_getSelectionById(int64 selectionId) {
         selection->student = DB_getUserById(selection->studentId);
         selection->course = DB_getCourseById(selection->courseId);
         // 插入索引
-        // selection_ID_Index = AVL_insertNode(selection_ID_Index, selectionId, INDEX_TYPE_OBJECT, selection);
+        selection_ID_Index = AVL_insertNode(selection_ID_Index, selectionId, INDEX_TYPE_OBJECT, selection);
         return selection;
     }
     return (CourseSelection *) node->index.data;
@@ -104,12 +104,18 @@ CourseSelection *DB_getSelectionByUserIdAndCourseId(int64 userId, int64 courseId
  */
 void DB_saveSelection(CourseSelection *selection) {
     // 保存到文件
+    CourseSelection *newSelection = calloc(1, sizeof(CourseSelection));
+    memcpy(newSelection, selection, sizeof(CourseSelection));
+
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/selection/%lld.dat", selection->id);
     FILE *fp = fopen(filePath, "wb");
     fwrite(selection, sizeof(CourseSelection), 1, fp);
     fclose(fp);
     DB_saveAutoIncrement();
+
+    // 重建索引
+    selection_ID_Index = AVL_deleteNode(selection_ID_Index, newSelection->id);
 }
 
 
@@ -138,10 +144,20 @@ char __checkHaveTime(IndexListNode* courses, Course *course){
         return 1;
     }
     CourseTime table[7][13] = {0};
+
+    // 默认情况下，weekStart设置MAX, weekEnd设置MIN
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 13; j++) {
+            table[i][j].weekStart = INT32_MAX;
+            table[i][j].weekEnd = -1;
+        }
+    }
+
     for (IndexListNode *n = courses; n!=NULL; n=n->next){
         CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
         if (selection == NULL) {
-            continue;
+            printf("[__checkHaveTime] 选课记录不存在\n");
+            return 0;
         }
         Course *c = selection->course;
         if (c == NULL) {
@@ -152,6 +168,7 @@ char __checkHaveTime(IndexListNode* courses, Course *course){
                 if (c->schedule[i][j] == 1) {
                     table[i][j].weekStart = min(table[i][j].weekStart, c->weekStart);
                     table[i][j].weekEnd = max(table[i][j].weekEnd, c->weekEnd);
+                    // printf("table[%d][%d] = %d-%d\n", i, j, table[i][j].weekStart, table[i][j].weekEnd);
                 }
             }
         }
@@ -270,7 +287,6 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
         printf("[DB_withdrawCourse] 选课记录不存在\n");
         return NULL;
     }
-    selection_ID_Index = AVL_deleteNode(selection_ID_Index, selection->id);
     char *filePath = calloc(100, sizeof(char));
 
     // 更新索引 - userId
@@ -284,6 +300,9 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
 
     // 更新索引 - file
     selection_file_Index = AVL_deleteNode(selection_file_Index, selection->id);
+
+    // 更新索引 - ID
+    selection_ID_Index = AVL_deleteNode(selection_ID_Index, selection->id);
 
     // 更新课程信息
     Course *course = DB_getCourseById(courseId);
