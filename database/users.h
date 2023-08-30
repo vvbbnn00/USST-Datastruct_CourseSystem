@@ -16,6 +16,7 @@
 #include "../utils/wubi.h"
 #include "database.h"
 #include "selections.h"
+#include "../../utils/string_ext.h"
 
 int64 AUTO_INCREMENT_USER_ID = 1;   // 自增的用户ID
 
@@ -31,7 +32,7 @@ AVLNode *user_empId_Index = NULL;   // 用户工号索引，从文件中读取
  * @return
  */
 User *DB_getUserById(int64 userId) {
-    IndexListNode *node = NULL; // AVL_searchExact(user_ID_Index, userId);
+    IndexListNode *node = AVL_searchExact(user_ID_Index, userId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
         char *filePath = calloc(100, sizeof(char));
@@ -48,7 +49,11 @@ User *DB_getUserById(int64 userId) {
         user_ID_Index = AVL_insertNode(user_ID_Index, userId, INDEX_TYPE_OBJECT, user);
         return user;
     }
-    return (User *) node->index.data;
+
+    User *retUser = calloc(1, sizeof(User));
+    memcpy(retUser, node->index.data, sizeof(User));
+
+    return retUser;
 }
 
 /**
@@ -77,7 +82,7 @@ NodeList *DB_getUsersByName(char *name) {
     int64 hashStart = Hash_String(preprocessedName);
     preprocessedName[strlen(preprocessedName) - 1]++;
     int64 hashEnd = Hash_String(preprocessedName);
-    free(preprocessedName);
+    safe_free((void **) &preprocessedName);
     AVL_inOrderSearch(user_name_Index, hashStart, hashEnd, &list);
     return list;
 }
@@ -99,9 +104,9 @@ NodeList *DB_getAllUsers() {
  * @param user
  */
 void DB_saveUser(User *user) {
-    User *newUser = calloc(1, sizeof(User));
-    memcpy(newUser, user, sizeof(User));
-
+    // 重建索引
+    user_ID_Index = AVL_deleteNode(user_ID_Index, user->id);
+    // 保存用户信息
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/user/%lld.dat", user->id);
     FILE *fp = fopen(filePath, "wb");
@@ -112,8 +117,6 @@ void DB_saveUser(User *user) {
     fwrite(user, sizeof(User), 1, fp);
     fclose(fp);
 
-    // 重建索引
-    user_ID_Index = AVL_deleteNode(user_ID_Index, newUser->id);
 }
 
 /**
@@ -149,7 +152,7 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
     strcpy(user->empId, empId);
     char *pwd = calcHexHMACSHA256(passwd, SECRET_KEY);
     strcpy(user->passwd, pwd);
-    free(pwd);
+    safe_free((void **) &pwd);
     user->role = role;
     strcpy(user->contact, contact);
     user->lastLoginTime = 0;
@@ -159,8 +162,11 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
     user_name_Index = AVL_insertNode(user_name_Index, hash, INDEX_TYPE_INT64,
                                      (void *) user->id);
     user_empId_Index = AVL_insertNode(user_empId_Index, Hash_String(empId), INDEX_TYPE_INT64, (void *) user->id);
-    user_ID_Index = AVL_insertNode(user_ID_Index, user->id, INDEX_TYPE_OBJECT, user);
     DB_saveUserIndex();
+
+    // 更新计数器
+    DB_setCountByIndex("user", DB_getCountByIndex("user") + 1);
+
     return user;
 }
 
@@ -228,6 +234,9 @@ char DB_deleteUser(int64 userId) {
     sprintf(filePath, "data/user/%lld.dat", user->id);
     remove(filePath);
     DB_saveUserIndex();
+
+    // 更新计数器
+    DB_setCountByIndex("user", DB_getCountByIndex("user") - 1);
 
     return 1;
 }

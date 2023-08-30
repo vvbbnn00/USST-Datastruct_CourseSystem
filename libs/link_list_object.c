@@ -2,13 +2,12 @@
 // Created by admin on 2022/6/28.
 //
 
-/*
- *  µœ÷¡¥±Ì
- */
+
+#ifndef PROJECT_LINK_LIST_OBJECT_C
+#define PROJECT_LINK_LIST_OBJECT_C
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "link_list_object.h"
 
 
@@ -58,3 +57,5 @@ void linkListObject_Delete(LinkList_Object *list, char deleteData) {
         node = pt;
     }
 }
+
+#endif //PROJECT_LINK_LIST_OBJECT_C

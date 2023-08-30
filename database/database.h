@@ -18,6 +18,9 @@
 #include "selections.h"
 
 
+AVLNode *global_counter_Index = NULL; // 全局计数器索引，计算Index的数量，从文件中读取
+
+
 /**
  * 初始化数据库
  */
@@ -62,12 +65,15 @@ void DB_Init() {
     course_name_Index = AVL_loadFromFile("data/index/course_name.avl");
     course_teacherId_Index = AVL_loadFromFile("data/index/course_teacherId.avl");
     course_file_Index = AVL_loadFromFile("data/index/course_file.avl");
+
     // 加载选课索引
     selection_userId_Index = AVL_loadFromFile("data/index/selection_userId.avl");
     selection_courseId_Index = AVL_loadFromFile("data/index/selection_courseId.avl");
     selection_userId_courseId_Index = AVL_loadFromFile("data/index/selection_userId_courseId.avl");
     selection_file_Index = AVL_loadFromFile("data/index/selection_file.avl");
 
+    // 加载计数器索引
+    global_counter_Index = AVL_loadFromFile("data/index/global_counter.avl");
 }
 
 /**
@@ -79,6 +85,50 @@ void DB_saveAutoIncrement() {
     fwrite(&AUTO_INCREMENT_COURSE_ID, sizeof(int64), 1, fp);
     fwrite(&AUTO_INCREMENT_SELECTION_ID, sizeof(int64), 1, fp);
     fclose(fp);
+}
+
+/**
+ * 获取计数
+ *
+ * @param indexName Index名称，最大不超过12个字符
+ * @return
+ */
+int64 DB_getCountByIndex(char *indexName) {
+    IndexListNode *node = AVL_searchExact(global_counter_Index, Hash_String(indexName));
+    if (node == NULL) {
+        return -1;
+    }
+    return (int64) node->index.data;
+}
+
+
+/**
+ * 保存计数器索引
+ */
+void DB_saveGlobalCounterIndex() {
+    AVL_saveToFile(global_counter_Index, "data/index/global_counter.avl");
+}
+
+
+/**
+ * 设置计数
+ *
+ * @param indexName Index名称，最大不超过12个字符
+ * @param count 计数
+ */
+void DB_setCountByIndex(char *indexName, int64 count) {
+    if (count < 0) {
+        printf("[setCountByIndex] count不能小于0\n");
+        return;
+    }
+
+    IndexListNode *node = AVL_searchExact(global_counter_Index, Hash_String(indexName));
+    if (node == NULL) {
+        global_counter_Index = AVL_insertNode(global_counter_Index, Hash_String(indexName), INDEX_TYPE_INT64, count);
+    } else {
+        node->index.data = (void *) count;
+    }
+    DB_saveGlobalCounterIndex();
 }
 
 

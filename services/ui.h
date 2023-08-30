@@ -104,13 +104,13 @@ int UI_inputStringWithRegexCheck(char *message, char *pattern, char *_dest, int 
     }
 
     if (regexMatch(pattern, input_string) == 0) {
-        free(input_string);
+        safe_free(&input_string);
         printf("输入的数据不符合规则，请重新输入\n");
         goto InputString;
     }
 
     strcpy(_dest, input_string);
-    free(input_string);
+    safe_free(&input_string);
     return 0;
 }
 
@@ -135,7 +135,7 @@ int UI_inputIntWithRegexCheck(char *message, char *pattern, int *_dest) {
     int result = strtol(input_string, &end_ptr, 10);
     if (*end_ptr != 0) {
         printf("请输入正确的数字\n");
-        free(input_string);
+        safe_free(&input_string);
         goto InputInteger;
     }
     *_dest = result;
@@ -162,7 +162,7 @@ int UI_inputFloatWithRegexCheck(char *message, char *pattern, double *_dest) {
     double result = strtof(input_string, &end_ptr);
     if (*end_ptr != 0) {
         printf("请输入正确的数字\n");
-        free(input_string);
+        safe_free(&input_string);
         goto InputFloat;
     }
     *_dest = result;

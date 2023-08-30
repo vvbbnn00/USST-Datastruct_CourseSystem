@@ -2,8 +2,8 @@
 // Created by vvbbnn00 on 2023/08/28.
 //
 
-#ifndef COURSESYSTEM2023_STRING_EXT_H
-#define COURSESYSTEM2023_STRING_EXT_H
+#ifndef STRING_EXT_H
+#define STRING_EXT_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,6 +85,19 @@ char regexMatch(char *pattern, char *string) {
     pcre2_match_data_free(match_data);   /* Release memory used for the match */
     pcre2_code_free(re);                 /*   data and the compiled pattern. */
     return rc < 0 ? 0 : 1;
+}
+
+/**
+ * 安全的free
+ * @param pptr
+ */
+void safe_free(void **pptr) {
+    if (*pptr != NULL) {
+        free(*pptr);
+        *pptr = NULL;
+    } else {
+        // 报告错误或警告
+    }
 }
 
 #endif //COURSESYSTEM2023_STRING_EXT_H

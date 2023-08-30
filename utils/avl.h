@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "../models.h"
 #include "math_ext.h"
+#include "string_ext.h"
 
 // 索引链表
 typedef struct IndexListNode {
@@ -95,9 +96,9 @@ void IndexListNode_delete(IndexListNode *node) {
         IndexListNode *temp = p;
         p = p->next;
         if (temp->index.type == INDEX_TYPE_STRING) {
-            free(temp->index.data);
+            safe_free(&temp->index.data);
         }
-        free(temp);
+        safe_free(&temp);
     }
 }
 
@@ -266,7 +267,7 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
         while (list) {
             IndexListNode *temp = list;
             list = list->next;
-            free(temp);
+            safe_free(&temp);
         }
 
         // 接着删除节点
@@ -280,7 +281,7 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
                 *root = *temp;
             }
 
-            free(temp);
+            safe_free(&temp);
         } else {
             AVLNode *temp = AVL_minValueNode(root->right);
 
@@ -350,7 +351,7 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
         if (temp) {
             node1->index = temp->index;
             node1->next = temp->next;
-            free(temp);
+            safe_free(&temp);
             return root;
         } else {
             return AVL_deleteNode(root, hash);
@@ -361,7 +362,7 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
     for (IndexListNode *prev = node1, *n = node1->next; n != NULL; prev = n, n = n->next) {
         if ((int64) n->index.data == delId) {
             prev->next = n->next;
-            free(n);
+            safe_free(&n);
             break;
         }
     }

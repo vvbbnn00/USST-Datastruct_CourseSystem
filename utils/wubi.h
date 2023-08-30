@@ -44,7 +44,7 @@ void Wubi_Init() {
     }
 
     fclose(fp);
-    free(line);
+    safe_free(&line);
     printf("[Wubi_Init] 五笔树初始化完成\n");
 
     AVL_saveToFile(wubiTree, "utils/wubi.avl");

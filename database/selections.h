@@ -39,7 +39,7 @@ typedef struct courseTime {
  * @return
  */
 CourseSelection *DB_getSelectionById(int64 selectionId) {
-    IndexListNode *node = NULL; // AVL_searchExact(selection_ID_Index, selectionId);
+    IndexListNode *node = AVL_searchExact(selection_ID_Index, selectionId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
         char *filePath = calloc(100, sizeof(char));
@@ -58,7 +58,11 @@ CourseSelection *DB_getSelectionById(int64 selectionId) {
         selection_ID_Index = AVL_insertNode(selection_ID_Index, selectionId, INDEX_TYPE_OBJECT, selection);
         return selection;
     }
-    return (CourseSelection *) node->index.data;
+
+    CourseSelection *retSelection = calloc(1, sizeof(CourseSelection));
+    memcpy(retSelection, node->index.data, sizeof(CourseSelection));
+
+    return retSelection;
 }
 
 
@@ -103,19 +107,15 @@ CourseSelection *DB_getSelectionByUserIdAndCourseId(int64 userId, int64 courseId
  * @param selection
  */
 void DB_saveSelection(CourseSelection *selection) {
+    // 重建索引
+    selection_ID_Index = AVL_deleteNode(selection_ID_Index, selection->id);
     // 保存到文件
-    CourseSelection *newSelection = calloc(1, sizeof(CourseSelection));
-    memcpy(newSelection, selection, sizeof(CourseSelection));
-
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/selection/%lld.dat", selection->id);
     FILE *fp = fopen(filePath, "wb");
     fwrite(selection, sizeof(CourseSelection), 1, fp);
     fclose(fp);
     DB_saveAutoIncrement();
-
-    // 重建索引
-    selection_ID_Index = AVL_deleteNode(selection_ID_Index, newSelection->id);
 }
 
 
@@ -136,7 +136,7 @@ void DB_saveSelectionIndex() {
  * @param course
  * @return
  */
-char __checkHaveTime(IndexListNode* courses, Course *course){
+char __checkHaveTime(IndexListNode *courses, Course *course) {
     if (course == NULL) {
         return 0;
     }
@@ -153,7 +153,7 @@ char __checkHaveTime(IndexListNode* courses, Course *course){
         }
     }
 
-    for (IndexListNode *n = courses; n!=NULL; n=n->next){
+    for (IndexListNode *n = courses; n != NULL; n = n->next) {
         CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
         if (selection == NULL) {
             printf("[__checkHaveTime] 选课记录不存在\n");
@@ -248,18 +248,21 @@ CourseSelection *DB_selectCourse(int64 userId, int64 courseId) {
     DB_saveSelection(selection);
 
     // 插入索引
-    selection_ID_Index = AVL_insertNode(selection_ID_Index, selection->id, INDEX_TYPE_OBJECT, selection);
     selection_userId_courseId_Index = AVL_insertNode(selection_userId_courseId_Index, Hash_String(string),
                                                      INDEX_TYPE_INT64, (void *) selection->id);
     selection_userId_Index = AVL_insertNode(selection_userId_Index, userId, INDEX_TYPE_INT64, (void *) selection->id);
     selection_courseId_Index = AVL_insertNode(selection_courseId_Index, courseId, INDEX_TYPE_INT64,
                                               (void *) selection->id);
-    selection_file_Index = AVL_insertNode(selection_file_Index, selection->id, INDEX_TYPE_INT64, (void *) selection->id);
+    selection_file_Index = AVL_insertNode(selection_file_Index, selection->id, INDEX_TYPE_INT64,
+                                          (void *) selection->id);
 
     // 更新课程信息
     course->currentMembers++;
     DB_saveCourse(course);
     DB_saveSelectionIndex();
+
+    // 更新计数器
+    DB_setCountByIndex("selection", DB_getCountByIndex("selection") + 1);
 
     return selection;
 }
@@ -296,7 +299,8 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
     selection_courseId_Index = AVL_deleteNodeById(selection_courseId_Index, courseId, selection->id);
 
     // 更新索引 - userId+courseId
-    selection_userId_courseId_Index = AVL_deleteNodeById(selection_userId_courseId_Index, Hash_String(string), selection->id);
+    selection_userId_courseId_Index = AVL_deleteNodeById(selection_userId_courseId_Index, Hash_String(string),
+                                                         selection->id);
 
     // 更新索引 - file
     selection_file_Index = AVL_deleteNode(selection_file_Index, selection->id);
@@ -313,6 +317,9 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
     DB_saveCourse(course);
 
     DB_saveSelectionIndex();
+
+    // 更新计数器
+    DB_setCountByIndex("selection", DB_getCountByIndex("selection") - 1);
 
     return selection;
 }

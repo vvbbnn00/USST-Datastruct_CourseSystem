@@ -27,6 +27,9 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId);
 
 CourseSelection *DB_getSelectionById(int64 selectionId);
 
+int64 DB_getCountByIndex(char *indexName);
+
+void DB_setCountByIndex(char *indexName, int64 count);
 
 int64 AUTO_INCREMENT_COURSE_ID = 1; // 自增的课程ID
 
@@ -41,7 +44,7 @@ AVLNode *course_teacherId_Index = NULL;     // 课程教师ID索引，从文件中读取
  * @return
  */
 Course *DB_getCourseById(int64 courseId) {
-    IndexListNode *node = NULL; // AVL_searchExact(course_ID_Index, courseId);
+    IndexListNode *node = AVL_searchExact(course_ID_Index, courseId);
     if (node == NULL) {
         // 若不存在，则从文件中读取
         char *filePath = calloc(100, sizeof(char));
@@ -71,7 +74,11 @@ Course *DB_getCourseById(int64 courseId) {
         course_ID_Index = AVL_insertNode(course_ID_Index, courseId, INDEX_TYPE_OBJECT, course);
         return course;
     }
-    return (Course *) node->index.data;
+
+    Course *retData = calloc(1, sizeof(Course));
+    memcpy(retData, node->index.data, sizeof(Course));
+
+    return retData;
 }
 
 /**
@@ -107,9 +114,9 @@ IndexListNode *DB_getCoursesByTeacherId(int64 teacherId) {
  * @param course
  */
 void DB_saveCourse(Course *course) {
+    // 重建索引
+    course_ID_Index = AVL_deleteNode(course_ID_Index, course->id);
     // 保存课程信息
-    Course *newCourse = calloc(1, sizeof(Course));
-    memcpy(newCourse, course, sizeof(Course));
     char *filePath = calloc(100, sizeof(char));
     sprintf(filePath, "data/course/%lld.dat", course->id);
     FILE *fp = fopen(filePath, "wb");
@@ -119,8 +126,6 @@ void DB_saveCourse(Course *course) {
     }
     fwrite(course, sizeof(Course), 1, fp);
     fclose(fp);
-    // 重建索引
-    course_ID_Index = AVL_deleteNode(course_ID_Index, newCourse->id);
 }
 
 /**
@@ -178,13 +183,16 @@ Course *DB_createCourse(char *courseName, char *description, int64 teacherId, in
     DB_saveCourse(course);
     // 插入索引
     int64 hash = Hash_String(Wubi_chn2wubi(courseName));
-    course_ID_Index = AVL_insertNode(course_ID_Index, course->id, INDEX_TYPE_OBJECT, course);
     course_name_Index = AVL_insertNode(course_name_Index, hash, INDEX_TYPE_INT64, (void *) course->id);
     course_teacherId_Index = AVL_insertNode(course_teacherId_Index, course->teacherId, INDEX_TYPE_INT64,
                                             (void *) course->id);
     course_file_Index = AVL_insertNode(course_file_Index, course->id, INDEX_TYPE_INT64, (void *) course->id);
 
     DB_saveCourseIndex();
+
+    // 更新计数器
+    int64 count = DB_getCountByIndex("course");
+    DB_setCountByIndex("course", count + 1);
 
     return course;
 }
@@ -248,6 +256,10 @@ void DB_deleteCourse(int64 courseId) {
 
     // 删除索引
     DB_saveCourseIndex();
+
+    // 更新计数器
+    int64 count = DB_getCountByIndex("course");
+    DB_setCountByIndex("course", count - 1);
 }
 
 NodeList *DB_getAllCourses() {

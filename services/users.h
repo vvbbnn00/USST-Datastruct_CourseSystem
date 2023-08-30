@@ -157,7 +157,7 @@ int Serv_User_login(char status) {
         goto Login;
     }
     char *hashPasswd = calcHexHMACSHA256(password, SECRET_KEY);
-    free(password);
+    safe_free(&password);
 
     // 调用数据库API，执行登录操作
     User *user = DB_getUserByEmpId(username);
@@ -172,8 +172,8 @@ int Serv_User_login(char status) {
         goto Login;
     }
 
-    free(username);
-    free(hashPasswd);
+    safe_free(&username);
+    safe_free(&hashPasswd);
 
     GlobalUser = user;
 
@@ -232,9 +232,9 @@ void Serv_changePassword() {
 
     char *hashPasswd = calcHexHMACSHA256(ori_password, SECRET_KEY);
     char *hashNewPasswd = calcHexHMACSHA256(new_password, SECRET_KEY);
-    free(ori_password);
-    free(new_password);
-    free(new_password_repeat);
+    safe_free(&ori_password);
+    safe_free(&new_password);
+    safe_free(&new_password_repeat);
     if (strcmp(hashPasswd, GlobalUser->passwd) != 0) {
         printf("[系统提示] 修改密码失败：原密码不正确（按任意键重新输入）\n");
         _getch();
@@ -247,7 +247,7 @@ void Serv_changePassword() {
         goto Init;
     }
 
-    free(hashPasswd);
+    safe_free(&hashPasswd);
     strcpy(GlobalUser->passwd, hashNewPasswd);
     DB_updateUser(GlobalUser);
 
@@ -297,7 +297,7 @@ User *addUser() {
     goto Return;
 
     CancelAdd:  // 取消添加
-    free(user);
+    safe_free(&user);
     user = NULL;
 
     Return:  // 返回数据
@@ -430,7 +430,7 @@ void editUser(User *_user) {
     goto EditCourse_GetKey;
 
     GC_COLLECT:
-    if (_user == NULL) free(user);
+    if (_user == NULL) safe_free(&user);
 }
 
 
@@ -607,7 +607,7 @@ void printAllUsers() {
 
     GC_Collect:
     linkListObject_Delete(user_data_list, 1);
-    free(user_data_list);
+    safe_free(&user_data_list);
     user_data_list = NULL;
 }
 

@@ -1,3 +1,6 @@
+#ifndef COURSESYSTEM2023_HMACSHA256_C
+#define COURSESYSTEM2023_HMACSHA256_C
+
 #include "hmacsha256.h"
 #include <string.h>
 #include <stdio.h>
@@ -270,3 +273,5 @@ char *calcHexHMACSHA256(const char *content_, const char *secret_) {
     }
     return FINAL_STR;
 }
+
+#endif //COURSESYSTEM2023_HMACSHA256_C

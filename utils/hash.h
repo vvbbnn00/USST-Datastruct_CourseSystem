@@ -75,7 +75,7 @@ int64 Hash_String(char *string) {
         hash = hash * 36;
         i++;
     }
-    free(string);
+    safe_free(&string);
 
     return hash;
 }

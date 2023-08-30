@@ -1,3 +1,6 @@
+#ifndef COURSESYSTEM2023_MAIN_C
+#define COURSESYSTEM2023_MAIN_C
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "models.h"
@@ -26,49 +29,49 @@ void generateTestData() {
     }
 
     Course *course1 = DB_createCourse("中国历史",
-                                     "这是一门测试课程111",
-                                     teacher->id,
-                                     1,
-                                     1,
-                                     10,
-                                     0,
-                                     10,
-                                     "地点1",
-                                     1.50,
-                                     scheduleList);
+                                      "这是一门测试课程111",
+                                      teacher->id,
+                                      1,
+                                      1,
+                                      10,
+                                      0,
+                                      10,
+                                      "地点1",
+                                      1.50,
+                                      scheduleList);
     Course *course2 = DB_createCourse("大学英语",
-                                     "这是一门测试课程222",
-                                     teacher->id,
-                                     1,
-                                     11,
-                                     12,
-                                     0,
-                                     10,
-                                     "地点1",
-                                     1.50,
-                                     scheduleList);
+                                      "这是一门测试课程222",
+                                      teacher->id,
+                                      1,
+                                      11,
+                                      12,
+                                      0,
+                                      10,
+                                      "地点1",
+                                      1.50,
+                                      scheduleList);
     Course *course3 = DB_createCourse("高等数学",
-                                        "这是一门测试课程333",
-                                        teacher->id,
-                                        1,
-                                        1,
-                                        12,
-                                        0,
-                                        10,
-                                        "地点1",
-                                        1.50,
-                                        scheduleList);
+                                      "这是一门测试课程333",
+                                      teacher->id,
+                                      1,
+                                      1,
+                                      12,
+                                      0,
+                                      10,
+                                      "地点1",
+                                      1.50,
+                                      scheduleList);
     Course *course4 = DB_createCourse("线性代数",
-                                        "这是一门测试课程444",
-                                        teacher->id,
-                                        1,
-                                        1,
-                                        12,
-                                        0,
-                                        10,
-                                        "地点1",
-                                        1.50,
-                                        scheduleList);
+                                      "这是一门测试课程444",
+                                      teacher->id,
+                                      1,
+                                      1,
+                                      12,
+                                      0,
+                                      10,
+                                      "地点1",
+                                      1.50,
+                                      scheduleList);
 
     CourseSelection *selection1 = DB_selectCourse(stu->id, course1->id);
     CourseSelection *selection2 = DB_selectCourse(stu->id, course2->id);
@@ -77,7 +80,7 @@ void generateTestData() {
 }
 
 
-void printTrees(){
+void printTrees() {
     system("cls & MODE CON COLS=55 LINES=9999");
 
     printf("user_name_Index:\n");
@@ -135,13 +138,15 @@ int main() {
 
     generateTestData();
 
-     GlobalUser = DB_getUserByEmpId("2135060620");
+    // GlobalUser = DB_getUserByEmpId("2135060620");
 
     printTrees();
 
-//    Serv_User_login(status);
+    Serv_User_login(status);
     // 打印主菜单
     UI_printMainMenu(0);
 
     return 0;
 }
+
+#endif //COURSESYSTEM2023_MAIN_C

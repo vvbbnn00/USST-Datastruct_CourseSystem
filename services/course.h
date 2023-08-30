@@ -13,10 +13,11 @@
 #include <math.h>
 #include "../models.h"
 #include "../common.h"
-#include "../utils/string_ext.h"
 #include "../libs/link_list_object.h"
 #include "users.h"
 #include "ui.h"
+#include "../utils/string_ext.h"
+
 
 User *GlobalUser;
 const char *NUMBER_CAPITAL[10] = {"零", "一", "二", "三", "四", "五", "六", "日", "八", "九"};
@@ -144,7 +145,7 @@ void printCourseData(Course *selected_course) {
     char *courseArrangeStr = printSchedule(selected_course->schedule);
     if (courseArrangeStr != NULL) {
         printf("\t授课安排：%s\n", courseArrangeStr);
-        free(courseArrangeStr);
+        safe_free(&courseArrangeStr);
     }
     printf("\t授课教师：%s(UID:%lld)\n", selected_course->teacher->name, selected_course->teacherId);
     printf("\t课程学时：%d学时\n",
@@ -390,7 +391,7 @@ void printStudentCourseSelection() {
 
     GC_Collect:
     linkListObject_Delete(course_data_list, 1);
-    free(course_data_list);
+    safe_free(&course_data_list);
     course_data_list = NULL;
 }
 
@@ -435,8 +436,8 @@ void printTableToStream(FILE *_stream, LinkList_Object scheduleList[7][13]) {
 void printStudentScoreTable() {
     system("chcp 936>nul & cls & MODE CON COLS=80 LINES=100"); // 这里行数一定要大，不然数据会被刷掉
 
-    int total; // 总结果条数
-    double score_total; // 总学分
+    int total = 0; // 总结果条数
+    double score_total = 0; // 总学分
     LinkList_Object *scheduleList = linkListObject_Init(); // 解析后的课表数据放在这里，对应节次等信息[7]表示周一(0)至周日(6)，[13]表示第一节课(1)至第十二节课(12)
 
     // ... 请求过程
@@ -449,6 +450,7 @@ void printStudentScoreTable() {
         CourseSelection *selection = DB_getSelectionById((int64) n->index.data);
         if (selection == NULL) continue;
         Course *course_data_pt = selection->course;
+        if (course_data_pt == NULL) continue;
         score_total += course_data_pt->points;
 
         linkListObject_Append(scheduleList, selection);
@@ -575,7 +577,7 @@ void printStudentLectureTable() {
             char file_name[len];
             memset(file_name, 0, len);
             sprintf(file_name, "%s的课表_%s.txt", name, timestamp);
-            free(timestamp);
+            safe_free(&timestamp);
             FILE *file = fopen(file_name, "w");
             printf("[提示] 正在将课表导出至：%s...\n", file_name);
             if (file == NULL) {
@@ -808,7 +810,7 @@ void printAllCourses(int scene) {
 
     GC_Collect:
     linkListObject_Delete(course_data_list, 1);
-    free(course_data_list);
+    safe_free(&course_data_list);
     course_data_list = NULL;
 }
 
@@ -830,7 +832,7 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
     char file_name[len];
     memset(file_name, 0, len);
     sprintf(file_name, "%s(%lld)学生名单_%s.csv", title, course->id, timestamp);
-    free(timestamp);
+    safe_free(&timestamp);
     FILE *file = fopen(file_name, "w");
     printf("[提示] 正在将学生名单导出至：%s...\n", file_name);
     if (file == NULL) {
@@ -1126,7 +1128,7 @@ void printStudentList(Course *courseData) {
                 }
 
                 printf("[退选成功] 用户 %s(%s) 已成功退选（按任意键继续）\n", user->name, user->empId);
-                free(ret);
+                safe_free(&ret);
                 getch();
                 goto Teacher_GetCourseAndDisplay;
             }
@@ -1140,7 +1142,7 @@ void printStudentList(Course *courseData) {
 
     Teacher_GC_Collect:
     linkListObject_Delete(student_list, 1);
-    free(student_list);
+    safe_free(&student_list);
     student_list = NULL;
 }
 
@@ -1295,7 +1297,7 @@ Course *addCourse() {
     goto Return;
 
     CancelAdd:  // 取消添加
-    free(course);
+    safe_free(&course);
     course = NULL;
 
     Return:  // 返回数据
@@ -1342,7 +1344,7 @@ void editCourse(Course *_course) {
     char *courseArrangeStr = printSchedule(course->schedule); // 6
     if (courseArrangeStr != NULL) {
         UI_selfPlusPrint("\t\t授课安排      %s\n", &counter, selected, courseArrangeStr);
-        free(courseArrangeStr);
+        safe_free(&courseArrangeStr);
     }
     UI_selfPlusPrint("\t\t授课教师      %s(UID:%lld)\n", &counter, selected, course->teacher->name, // 7
                      course->teacherId);
@@ -1474,7 +1476,7 @@ void editCourse(Course *_course) {
     goto EditCourse_GetKey;
 
     GC_COLLECT:
-    if (_course == NULL) free(course);
+    if (_course == NULL) safe_free(&course);
 }
 
 
@@ -1623,7 +1625,7 @@ void importStuCourseData() {
                     linkListObject_Append(import_list, imp);
                     total++;
                 } else {
-                    free(imp);
+                    safe_free(&imp);
                 }
             }
             fclose(fp);
@@ -1641,7 +1643,7 @@ void importStuCourseData() {
 
     Import_GC_Collect:
     linkListObject_Delete(import_list, 1);
-    free(import_list);
+    safe_free(&import_list);
 }
 
 #endif
