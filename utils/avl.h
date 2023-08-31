@@ -271,7 +271,7 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
         }
 
         // 接着删除节点
-        if ((root->left == NULL) || (root->right == NULL)) {
+        if (root->left == NULL || root->right == NULL) {
             AVLNode *temp = root->left ? root->left : root->right;
 
             if (!temp) {
@@ -285,40 +285,34 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
         } else {
             AVLNode *temp = AVL_minValueNode(root->right);
 
-            root->list = temp->list;
+            // 需要深复制
+            root->list = IndexListNode_deepCopy(temp->list);
 
             root->right = AVL_deleteNode(root->right, temp->list->index.hash);
         }
-
     }
 
     if (root == NULL) {
         return root;
     }
 
-    // 更新高度
     root->height = 1 + max(AVL_getHeight(root->left), AVL_getHeight(root->right));
 
-    // 获取平衡因子并进行旋转
     int balance = AVL_getBalance(root);
 
-    // 左左
     if (balance > 1 && AVL_getBalance(root->left) >= 0) {
         return AVL_rightRotate(root);
     }
 
-    // 左右
     if (balance > 1 && AVL_getBalance(root->left) < 0) {
         root->left = AVL_leftRotate(root->left);
         return AVL_rightRotate(root);
     }
 
-    // 右右
     if (balance < -1 && AVL_getBalance(root->right) <= 0) {
         return AVL_leftRotate(root);
     }
 
-    // 右左
     if (balance < -1 && AVL_getBalance(root->right) > 0) {
         root->right = AVL_rightRotate(root->right);
         return AVL_leftRotate(root);

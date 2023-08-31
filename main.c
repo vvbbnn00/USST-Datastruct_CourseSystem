@@ -14,6 +14,64 @@
 #include <setjmp.h>
 
 
+void testAVL(){
+    system("cls & MODE CON COLS=55 LINES=9999");
+
+    User *admin = DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
+    User *stu = DB_registerUser("陆天成", "2135060620", ADMIN_PASSWORD, 0, "11451419191");
+    User *teacher = DB_registerUser("老师", "teacher", ADMIN_PASSWORD, 1, "11451419191");
+    DB_registerUser("田所浩二", "ex001", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("李田所", "ex002", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("白雪乃爱", "ex003", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("野兽先辈", "ex004", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("ATRI", "ex005", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("有地绫", "ex006", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("绫地宁宁", "ex007", ADMIN_PASSWORD, 0, "0d000721");
+    DB_registerUser("新海天", "ex008", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("结成希亚", "ex009", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("九条都", "ex010", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("朝武芳乃", "ex011", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("雨宫优子", "ex012", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("御坂美琴", "ex013", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("泉此方", "ex014", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("周防天音", "ex015", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("牧濑红莉牺", "ex016", ADMIN_PASSWORD, 0, "11451419191");
+
+    printf("输出删除前的二叉树：\n");
+    printf("user_name_Index:\n");
+    AVL_printInOrder(user_name_Index);
+    AVL_printPreOrder(user_name_Index);
+
+    printf("user_empId_Index:\n");
+    AVL_printInOrder(user_empId_Index);
+    AVL_printPreOrder(user_empId_Index);
+
+    printf("user_file_Index:\n");
+    AVL_printInOrder(user_file_Index);
+    AVL_printPreOrder(user_file_Index);
+
+    printf("\n\n执行删除用户");
+
+    DB_deleteUser(8);
+
+    printf("输出删除后的二叉树：\n");
+    printf("user_name_Index:\n");
+    AVL_printInOrder(user_name_Index);
+    AVL_printPreOrder(user_name_Index);
+
+    printf("user_empId_Index:\n");
+    AVL_printInOrder(user_empId_Index);
+    AVL_printPreOrder(user_empId_Index);
+
+    printf("user_file_Index:\n");
+    AVL_printInOrder(user_file_Index);
+    AVL_printPreOrder(user_file_Index);
+
+    system("pause");
+    system("MODE CON COLS=55 LINES=30");
+}
+
+
 void generateTestData() {
 
     int scheduleList[7][13] = {{1, 1},
@@ -22,6 +80,23 @@ void generateTestData() {
     User *admin = DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
     User *stu = DB_registerUser("陆天成", "2135060620", ADMIN_PASSWORD, 0, "11451419191");
     User *teacher = DB_registerUser("老师", "teacher", ADMIN_PASSWORD, 1, "11451419191");
+    DB_registerUser("田所浩二", "ex001", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("李田所", "ex002", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("白雪乃爱", "ex003", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("野兽先辈", "ex004", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("ATRI", "ex005", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("有地绫", "ex006", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("绫地宁宁", "ex007", ADMIN_PASSWORD, 0, "0d000721");
+    DB_registerUser("新海天", "ex008", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("结成希亚", "ex009", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("九条都", "ex010", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("朝武芳乃", "ex011", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("雨宫优子", "ex012", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("御坂美琴", "ex013", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("泉此方", "ex014", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("周防天音", "ex015", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("牧濑红莉牺", "ex016", ADMIN_PASSWORD, 0, "11451419191");
+
 
     if (admin == NULL || stu == NULL || teacher == NULL) {
         printf("生成测试数据失败！\n");
@@ -135,6 +210,9 @@ int main() {
     system("TITLE 课程管理系统 - " VERSION);
     Wubi_Init();
     DB_Init();
+
+//    testAVL();
+
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 
     generateTestData();
