@@ -150,9 +150,7 @@ User *DB_registerUser(char *name, char *empId, char *passwd, int role, char *con
     user->id = AUTO_INCREMENT_USER_ID++;
     strcpy(user->name, name);
     strcpy(user->empId, empId);
-    char *pwd = calcHexHMACSHA256(passwd, SECRET_KEY);
-    strcpy(user->passwd, pwd);
-    safe_free((void **) &pwd);
+    strcpy(user->passwd, passwd);
     user->role = role;
     strcpy(user->contact, contact);
     user->lastLoginTime = 0;

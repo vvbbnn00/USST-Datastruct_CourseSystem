@@ -1061,7 +1061,7 @@ void printStudentList(Course *courseData) {
                 printf("[录入失败] 成绩录入失败（按任意键继续）\n");
             }
             getch();
-            goto Teacher_Refresh;
+            goto Teacher_GetCourseAndDisplay;
         }
         case 'A':
         case 'a': // 新增选课学生
@@ -1108,23 +1108,23 @@ void printStudentList(Course *courseData) {
                 char input_char[31];
                 gets_safe(input_char, 30);
                 if (strcmp(input_char, pt->student.empId) != 0) {
-                    printf("学号不一致，已取消操作（按任意键继续）。\n");
+                    printf("[退选失败] 学号不一致，已取消操作（按任意键继续）。\n");
                     getch();
-                    goto Teacher_GetCourseAndDisplay;
+                    goto Teacher_Refresh;
                 }
 
                 User *user = DB_getUserByEmpId(input_char);
                 if (user == NULL) {
-                    printf("学号不存在，已取消操作（按任意键继续）。\n");
+                    printf("[退选失败] 学号不存在，已取消操作（按任意键继续）。\n");
                     getch();
-                    goto Teacher_GetCourseAndDisplay;
+                    goto Teacher_Refresh;
                 }
 
                 CourseSelection *ret = DB_withdrawCourse(user->id, courseData->id); // 删除选课
                 if (ret == NULL) {
                     printf("[退选失败] 退选失败（按任意键继续）\n");
                     getch();
-                    goto Teacher_GetCourseAndDisplay;
+                    goto Teacher_Refresh;
                 }
 
                 printf("[退选成功] 用户 %s(%s) 已成功退选（按任意键继续）\n", user->name, user->empId);
@@ -1164,7 +1164,8 @@ Schedule editSchedule(int schedule[7][13]) {
     ScheduleEditor_Refresh:
     system("chcp 936>nul & cls & MODE CON COLS=65 LINES=32");
     UI_printHeader(50);
-    UI_printInMiddle("\n======= 课程·编辑授课安排 =======\n", 52);
+    printf("\n");
+    UI_printInMiddle("======= 课程·编辑授课安排 =======\n", 52);
     printf("-------------------------------------------------------\n");
     printf("   节次     周一  周二  周三  周四  周五  周六  周日\n");
     printf("-------------------------------------------------------\n");

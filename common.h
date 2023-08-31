@@ -7,7 +7,7 @@
 
 #define SECRET_KEY "COURSESYSTEM2023"
 #define ADMIN_USERNAME "admin"
-#define ADMIN_PASSWORD "123456"
+#define ADMIN_PASSWORD "97e50dd274c4f85a418dd166ca1958b8fe50e79ec1805961fbc576cd57b91191"
 #define VERSION "v1.0(AVL DB Core v0.1)"
 
 // 用户名正则表达式

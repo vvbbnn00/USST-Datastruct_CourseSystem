@@ -20,8 +20,8 @@ void generateTestData() {
                                {0, 0, 0, 1}};
 
     User *admin = DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
-    User *stu = DB_registerUser("陆天成", "2135060620", "123456", 0, "11451419191");
-    User *teacher = DB_registerUser("老师", "teacher", "123456", 1, "11451419191");
+    User *stu = DB_registerUser("陆天成", "2135060620", ADMIN_PASSWORD, 0, "11451419191");
+    User *teacher = DB_registerUser("老师", "teacher", ADMIN_PASSWORD, 1, "11451419191");
 
     if (admin == NULL || stu == NULL || teacher == NULL) {
         printf("生成测试数据失败！\n");
@@ -130,7 +130,7 @@ void printTrees() {
 
 
 int main() {
-    system("chcp 65001");
+    system("chcp 65001");  // 非中文语言环境下，设置GBK编码前需要先设置为UTF-8，否则会乱码
     system("chcp 936");
     system("TITLE 课程管理系统 - " VERSION);
     Wubi_Init();
