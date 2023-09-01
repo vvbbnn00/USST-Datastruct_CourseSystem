@@ -163,7 +163,7 @@ void printStudentCourseSelection() {
 
     char search_kw[36] = "";
     double current_score = 0; // 本学期最多可选学分, 当前已选学分
-    int total, page = 1, max_page, page_size = 10, current_total;
+    int total, page = 1, max_page, page_size = 10, current_total, cnt;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
     LinkList_Object *course_data_list = NULL;
@@ -193,33 +193,36 @@ void printStudentCourseSelection() {
 
     // 解析课程数据
     course_data_list = linkListObject_Init(); // 链表初始化
+    cnt = 0;
     for (NodeList *pt = result; pt != NULL; pt = pt->next) {
-        Course *course_data_pt = DB_getCourseById((int64) pt->indexNode->index.data);
-        if (course_data_pt == NULL) {
-            continue;
-        }
-        struct studentCourseSelection *tmp = calloc(1, sizeof(struct studentCourseSelection));
-        if (tmp == NULL) {
-            printf("[提示] 内存不足\n");
-            getch();
-            goto GC_Collect;
-        }
+        if (cnt++ >= (page - 1) * page_size && cnt <= (page - 1) * page_size + current_total) {
+            Course *course_data_pt = DB_getCourseById((int64) pt->indexNode->index.data);
+            if (course_data_pt == NULL) {
+                continue;
+            }
+            struct studentCourseSelection *tmp = calloc(1, sizeof(struct studentCourseSelection));
+            if (tmp == NULL) {
+                printf("[提示] 内存不足\n");
+                getch();
+                goto GC_Collect;
+            }
 
-        if (course_data_pt->currentMembers >= course_data_pt->maxMembers) {
-            tmp->status = 2;
-            strcpy(tmp->locked_reason, "课程已满员");
+            if (course_data_pt->currentMembers >= course_data_pt->maxMembers) {
+                tmp->status = 2;
+                strcpy(tmp->locked_reason, "课程已满员");
+            }
+
+            CourseSelection *selection = DB_getSelectionByUserIdAndCourseId(GlobalUser->id, course_data_pt->id);
+
+            if (selection != NULL) {
+                tmp->status = 1;
+                tmp->selection_time = selection->selectionTime;
+                current_score += course_data_pt->points;
+            }
+
+            tmp->course = *course_data_pt;
+            linkListObject_Append(course_data_list, tmp);
         }
-
-        CourseSelection *selection = DB_getSelectionByUserIdAndCourseId(GlobalUser->id, course_data_pt->id);
-
-        if (selection != NULL) {
-            tmp->status = 1;
-            tmp->selection_time = selection->selectionTime;
-            current_score += course_data_pt->points;
-        }
-
-        tmp->course = *course_data_pt;
-        linkListObject_Append(course_data_list, tmp);
     }
     if (course_data_list->head) {
         selectedRow = course_data_list->head;
@@ -230,13 +233,7 @@ void printStudentCourseSelection() {
     system("cls");
     printf("\n");
     UI_printHeader(102);
-    printf("\n");
-
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s", search_kw); } else { printf("\n"); }
-    printf("[选课概况] 已选%.2f学分\n\n", current_score);
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n\n",
-           total, page, max_page);
+    printf("\n <Enter>选课/退选 <K>课程模糊查询 <Esc>返回主菜单\n\n");
 
     UI_printInMiddle("======= 课程·学生选课 =======\n", 104);
     printf("%-16s%-35s%-35s%-10s%-12s\n", "选课状态", "课程ID", "课程名称", "课程学分", "授课教师");
@@ -316,7 +313,14 @@ void printStudentCourseSelection() {
            getFormatTimeString(selected_selection->selection_time) : "");
 
     SetConsoleTextAttribute(windowHandle, 0x07);
-    printf("\n <Enter>选课/退选 <K>课程模糊查询 <Esc>返回主菜单\n");
+
+    printf("\n");
+
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s", search_kw); } else { printf("\n"); }
+    printf("[选课概况] 已选%.2f学分\n\n", current_score);
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n\n",
+           total, page, max_page);
 
     int keyboard_press;
 
@@ -461,7 +465,7 @@ void printStudentScoreTable() {
     system("cls");
     printf("\n");
     UI_printHeader(76);
-    printf("\n");
+    printf("\n\t <Esc>返回主菜单\n\n");
     UI_printInMiddle("======= 课程·成绩查询 =======\n", 77);
     printf("%-16s%-35s%-15s%-10s\n", "课程ID", "课程名称", "课程学分", "成绩");
     printf("--------------------------------------------------------------------------\n");
@@ -489,7 +493,7 @@ void printStudentScoreTable() {
     printf("\n    [学生姓名] %s  [已选学分] %.2f\n",
            GlobalUser->name,
            score_total);
-    printf("\n\t <Esc>返回主菜单\n\n");
+
 
     int keyboard_press;
 
@@ -655,12 +659,20 @@ void printAllCourses(int scene) {
     system("cls");
     printf("\n");
     UI_printHeader(120);
-    printf("\n");
 
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
+    printf("\n\n");
+    if (GlobalUser->role == 2) { // 管理员可编辑课程
+        printf("<A>开设/新建课程 <Enter>编辑课程 <D>删除课程");
+    } else {
+        printf("\t  ");
+    }
+
+    if (GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1)) { // 管理员和教师可查看学生名单
+        printf(" <P>查看学生名单");
+    }
+
+    printf(" <K>课程模糊查询");
+    printf(" <Esc>返回主菜单\n");
     printf("\n");
 
     UI_printInMiddle("======= 课程·全校课表一览 =======\n", 122);
@@ -712,19 +724,14 @@ void printAllCourses(int scene) {
 
     printCourseData(selectedRow->data);
 
-    printf("\n\n");
-    if (GlobalUser->role == 2) { // 管理员可编辑课程
-        printf("<A>开设/新建课程 <Enter>编辑课程 <D>删除课程");
-    } else {
-        printf("\t  ");
-    }
+    printf("\n");
 
-    if (GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1)) { // 管理员和教师可查看学生名单
-        printf(" <P>查看学生名单");
-    }
+    printf("[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+    printf("\n");
 
-    printf(" <K>课程模糊查询");
-    printf(" <Esc>返回主菜单\n");
 
 
     int keyboard_press;
@@ -872,7 +879,6 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
  * 教师/管理员打印学生名单
  */
 void printStudentList(Course *courseData) {
-    system("chcp 936>nul & cls & MODE CON COLS=100 LINES=55");
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     int sort_method = 0; // 排序方法 0 - 默认排序 1 - 学分降序 2 - 学分升序
@@ -883,6 +889,7 @@ void printStudentList(Course *courseData) {
     LinkList_Node *selectedRow = NULL;
 
     Teacher_GetCourseAndDisplay:
+    system("chcp 936>nul & cls & MODE CON COLS=100 LINES=60");
     printf("[提示] 正在请求...\n");
 
     IndexListNode *result = DB_getSelectionsByCourseId(courseData->id);
@@ -924,11 +931,14 @@ void printStudentList(Course *courseData) {
     system("cls");
     printf("\n");
     UI_printHeader(99);
-    printf("\n");
 
-    printf("    [课程名称] %s [课程ID] %lld\n\n", courseData->courseName, courseData->id);
-    printf("    [提示] 共%4d条数据，当前第%3d页，共%3d页\n\n    （左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
+    printf("\n\n  ");
+    if (GlobalUser->role == 2) { // 管理员可编辑课程
+        printf("<A>添加学生 <D>取消该学生选课 <I>批量导入学生");
+    } else {
+        printf("\t");
+    }
+    printf(" <S>录入该学生成绩 <G>统计成绩分段信息\n  <E>导出学生名单 <Esc>返回主菜单\n\n");
 
     UI_printInMiddle("======= 课程·课程名单 =======\n", 101);
     printf("%-6s%-15s%-20s%-30s%-10s%-15s\n", "序号", "姓名", "学号", "选课时间", "成绩", "联系方式");
@@ -966,13 +976,11 @@ void printStudentList(Course *courseData) {
     for (int i = 0; i < page_size - current_total - 1; i++) printf("\n"); // 补齐页面
     printf("\n");
     UI_printInMiddle("=============================\n", 71);
-    printf("\n\n  ");
-    if (GlobalUser->role == 2) { // 管理员可编辑课程
-        printf("<A>添加学生 <D>取消该学生选课 <I>批量导入学生");
-    } else {
-        printf("\t");
-    }
-    printf(" <S>录入该学生成绩 <G>统计成绩分段信息 <E>导出学生名单 <Esc>返回主菜单\n");
+    printf("\n");
+
+    printf("    [课程名称] %s [课程ID] %lld\n\n", courseData->courseName, courseData->id);
+    printf("    [提示] 共%4d条数据，当前第%3d页，共%3d页\n\n    （左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
 
     if (selectedRow == NULL) {
         UI_printErrorData("暂无名单");
@@ -1500,6 +1508,8 @@ void importStuCourseData() {
     printf("\n");
     UI_printHeader(54);
     printf("\n");
+    UI_printInMiddle("<T>导出模板 <I>选择文件 <Y>确认导入 <Esc>取消并返回", 56);
+    printf("\n\n");
     UI_printInMiddle("======= 课程·导入学生名单 =======\n\n", 56);
     printf("%-6s%-20s%-30s\n", "序号", "学号", "选修课程ID");
     printf("--------------------------------------------------------\n");
@@ -1523,7 +1533,6 @@ void importStuCourseData() {
     UI_printInMiddle("=============================\n", 56);
     printf("    [提示] 共%4d条数据，当前第%3d页，共%3d页\n\n    （左方向键：前一页；右方向键：后一页）\n\n",
            total, page, max_page);
-    UI_printInMiddle("<T>导出模板 <I>选择文件 <Y>确认导入 <Esc>取消并返回", 56);
     printf("\n");
 
     Import_GetKey:

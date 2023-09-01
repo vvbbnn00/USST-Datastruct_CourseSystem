@@ -442,7 +442,7 @@ void printAllUsers() {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     char search_kw[36] = "";
-    int total, page = 1, max_page, page_size = 15, current_total;
+    int total, page = 1, max_page, page_size = 15, current_total, cnt = 0;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
     LinkList_Object *user_data_list = NULL;
@@ -470,13 +470,18 @@ void printAllUsers() {
     current_total = (page == max_page) ? (total % page_size) : page_size;
 
     user_data_list = linkListObject_Init();
+
+    cnt = 0;
     for (NodeList *pt = result; pt != NULL; pt = pt->next) {
-        IndexListNode *node = pt->indexNode;
-        int64 id = (int64) node->index.data;
-        User *user = DB_getUserById(id);
-        User *userInsert = memcpy(calloc(1, sizeof(User)), user, sizeof(User));
-        if (user == NULL) continue;
-        linkListObject_Append(user_data_list, userInsert);
+        if (cnt >= (page - 1) * page_size && cnt < page * page_size) {
+            IndexListNode *node = pt->indexNode;
+            int64 id = (int64) node->index.data;
+            User *user = DB_getUserById(id);
+            User *userInsert = memcpy(calloc(1, sizeof(User)), user, sizeof(User));
+            if (user == NULL) continue;
+            linkListObject_Append(user_data_list, userInsert);
+        }
+        cnt++;
     }
 
     if (user_data_list->head != NULL) selectedRow = user_data_list->head;
@@ -489,11 +494,9 @@ void printAllUsers() {
     UI_printHeader(92);
     printf("\n");
 
-    printf("[当前搜索条件] ");
-    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
-    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
-           total, page, max_page);
-    printf("\n");
+    printf("\n  ");
+    printf(" <A>新建用户 <Enter>编辑用户 <D>删除用户 <K>用户模糊查询");
+    printf(" <Esc>返回主菜单\n\n");
 
     UI_printInMiddle("======= 用户·用户管理 =======\n", 95);
     printf("%-10s%-20s%-17s%-8s%-25s%-20s\n", "用户UID", "姓名", "学工号", "角色", "最后登录时间", "联系方式");
@@ -528,9 +531,12 @@ void printAllUsers() {
         }
     }
 
-    printf("\n  ");
-    printf(" <A>新建用户 <Enter>编辑用户 <D>删除用户 <K>用户模糊查询");
-    printf(" <Esc>返回主菜单\n");
+    printf("\n[当前搜索条件] ");
+    if (strlen(search_kw) > 0) { printf("模糊搜索=%s\n", search_kw); } else { printf("\n"); }
+    printf("[提示] 共%4d条数据，当前第%3d页，共%3d页（左方向键：前一页；右方向键：后一页；上/下方向键：切换选中数据）\n",
+           total, page, max_page);
+    printf("\n");
+
 
     int keyboard_press;
 
