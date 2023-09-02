@@ -100,4 +100,4 @@ void safe_free(void **pptr) {
     }
 }
 
-#endif //COURSESYSTEM2023_STRING_EXT_H
+#endif //STRING_EXT_H

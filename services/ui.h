@@ -14,26 +14,22 @@
 #include "pcre2.h"
 #include "../common.h"
 #include "../utils/string_ext.h"
-#include "users.h"
-#include "course.h"
-
-#define TITLE() system("title 课程信息系统 - " VERSION)
 
 User *GlobalUser;
 
 char *Serv_User_getUserRole(int role);
 
-void Serv_changePassword();
+void Serv_User_changePassword();
 
-void printAllUsers();
+void Serv_User_printAllUsers();
 
+void Serv_Course_printStudentCourseSelection();
 
-/**
- * 设置程序标题（GBK）
- */
-void UI_setTitle() {
-    TITLE();
-}
+void Serv_Course_printAllCourses(int scene);
+
+void Serv_Course_printStudentLectureTable();
+
+void Serv_Course_printStudentScoreTable();
 
 /**
  * 输出错误信息
@@ -104,13 +100,13 @@ int UI_inputStringWithRegexCheck(char *message, char *pattern, char *_dest, int 
     }
 
     if (regexMatch(pattern, input_string) == 0) {
-        safe_free(&input_string);
+        safe_free((void **) &input_string);
         printf("输入的数据不符合规则，请重新输入\n");
         goto InputString;
     }
 
     strcpy(_dest, input_string);
-    safe_free(&input_string);
+    safe_free((void **) &input_string);
     return 0;
 }
 
@@ -135,7 +131,7 @@ int UI_inputIntWithRegexCheck(char *message, char *pattern, int *_dest) {
     int result = strtol(input_string, &end_ptr, 10);
     if (*end_ptr != 0) {
         printf("请输入正确的数字\n");
-        safe_free(&input_string);
+        safe_free((void **) &input_string);
         goto InputInteger;
     }
     *_dest = result;
@@ -162,7 +158,7 @@ int UI_inputFloatWithRegexCheck(char *message, char *pattern, double *_dest) {
     double result = strtof(input_string, &end_ptr);
     if (*end_ptr != 0) {
         printf("请输入正确的数字\n");
-        safe_free(&input_string);
+        safe_free((void **) &input_string);
         goto InputFloat;
     }
     *_dest = result;
@@ -251,7 +247,7 @@ void UI_doMainMenuActions(int command) {
         case 5:
         case 13:
         case 23:
-            Serv_changePassword();
+            Serv_User_changePassword();
             break;
             // 退出登录
         case 6:
@@ -265,24 +261,24 @@ void UI_doMainMenuActions(int command) {
         case 25:
             exit(0);
         case 1:
-            printStudentCourseSelection();
+            Serv_Course_printStudentCourseSelection();
             break;
         case 2:
-            printStudentLectureTable();
+            Serv_Course_printStudentLectureTable();
             break;
         case 3:
         case 12:
         case 21:
-            printAllCourses(0);
+            Serv_Course_printAllCourses(0);
             break;
         case 4:
-            printStudentScoreTable();
+            Serv_Course_printStudentScoreTable();
             break;
         case 11:
-            printAllCourses(1);
+            Serv_Course_printAllCourses(1);
             break;
         case 22:
-            printAllUsers();
+            Serv_User_printAllUsers();
             break;
         default:
             break;
@@ -335,9 +331,9 @@ int UI_printMainMenu(char wrong_command) {
         wrong_command = 0;
     } else { printf("请输入命令编号："); }
     char command_raw[11] = {0};
-    gets(command_raw);
+    fgets(command_raw, 10, stdin);
     fflush(stdin); // 清除多余的无效指令，防止影响后续操作
-    if (strlen(command_raw) != 1) {
+    if (strlen(command_raw) != 2) {
         wrong_command = 1;
         goto init;
     }
@@ -360,7 +356,7 @@ int UI_printMainMenu(char wrong_command) {
  * @param fileType 文件类型，用\0分割，例如：All *.* Text *.TXT
  * @return 1 - 成功 0 - 失败
  */
-int openFileDialog(char *path, const char *fileType, char *title) {
+int UI_openFileDialog(char *path, const char *fileType, char *title) {
     OPENFILENAME ofn;
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -371,5 +367,9 @@ int openFileDialog(char *path, const char *fileType, char *title) {
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
     return GetOpenFileName(&ofn);
 }
+
+
+#include "users.h"
+#include "course.h"
 
 #endif //COURSESYSTEM2023_UI_H

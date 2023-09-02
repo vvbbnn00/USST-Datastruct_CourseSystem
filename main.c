@@ -17,9 +17,9 @@
 void testAVL(){
     system("cls & MODE CON COLS=55 LINES=9999");
 
-    User *admin = DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
-    User *stu = DB_registerUser("陆天成", "2135060620", ADMIN_PASSWORD, 0, "11451419191");
-    User *teacher = DB_registerUser("老师", "teacher", ADMIN_PASSWORD, 1, "11451419191");
+    DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
+    DB_registerUser("陆天成", "2135060620", ADMIN_PASSWORD, 0, "11451419191");
+    DB_registerUser("老师", "teacher", ADMIN_PASSWORD, 1, "11451419191");
     DB_registerUser("田所浩二", "ex001", ADMIN_PASSWORD, 0, "11451419191");
     DB_registerUser("李田所", "ex002", ADMIN_PASSWORD, 0, "11451419191");
     DB_registerUser("白雪乃爱", "ex003", ADMIN_PASSWORD, 0, "11451419191");
@@ -211,7 +211,7 @@ int main() {
     Wubi_Init();
     DB_Init();
 
-//    testAVL();
+    // testAVL();
 
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 

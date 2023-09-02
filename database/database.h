@@ -124,7 +124,7 @@ void DB_setCountByIndex(char *indexName, int64 count) {
 
     IndexListNode *node = AVL_searchExact(global_counter_Index, Hash_String(indexName));
     if (node == NULL) {
-        global_counter_Index = AVL_insertNode(global_counter_Index, Hash_String(indexName), INDEX_TYPE_INT64, count);
+        global_counter_Index = AVL_insertNode(global_counter_Index, Hash_String(indexName), INDEX_TYPE_INT64, (void *) count);
     } else {
         node->index.data = (void *) count;
     }

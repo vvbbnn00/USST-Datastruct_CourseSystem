@@ -1,5 +1,5 @@
-#ifndef _HMAC_SHA_256_H_
-#define _HMAC_SHA_256_H_
+#ifndef HMAC_SHA_256_H_
+#define HMAC_SHA_256_H_
 
 #define SHA256_BLOCKLEN  64ul //size of message block buffer
 #define SHA256_DIGESTLEN 32ul //size of digest in uint8_t
@@ -40,10 +40,7 @@ void hmac_sha256_update(HMAC_SHA256_CTX *hmac, const uint8_t *m, uint32_t mlen);
 
 void hmac_sha256_final(HMAC_SHA256_CTX *hmac, uint8_t *md);
 
-void pbkdf2_sha256(HMAC_SHA256_CTX *ctx, const uint8_t *key, uint32_t keylen, const uint8_t *salt, uint32_t saltlen,
-                   uint32_t rounds, uint8_t *dk, uint32_t dklen);
-
 extern char *calcHexHMACSHA256(const char *content_, const char *secret_);
 
-#endif // _HMAC_SHA_256_H_
+#endif // HMAC_SHA_256_H_
 

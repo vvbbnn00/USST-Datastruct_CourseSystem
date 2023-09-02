@@ -136,7 +136,7 @@ void DB_saveSelectionIndex() {
  * @param course
  * @return
  */
-char __checkHaveTime(IndexListNode *courses, Course *course) {
+char DB_inner_checkHaveTime(IndexListNode *courses, Course *course) {
     if (course == NULL) {
         return 0;
     }
@@ -220,7 +220,7 @@ CourseSelection *DB_selectCourse(int64 userId, int64 courseId) {
 
     // 检查是否有时间冲突
     IndexListNode *courses = DB_getSelectionsByUserId(userId);
-    if (!__checkHaveTime(courses, course)) {
+    if (!DB_inner_checkHaveTime(courses, course)) {
         printf("[DB_selectCourse] 选课时间存在冲突\n");
         return NULL;
     }

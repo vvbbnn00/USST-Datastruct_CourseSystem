@@ -30,6 +30,7 @@ typedef struct NodeList {
     struct NodeList *next;      // 下一个节点
 } NodeList;
 
+IndexListNode *AVL_searchExact(AVLNode *root, int64 hash);
 
 /**
  * 创建新的索引节点
@@ -98,7 +99,7 @@ void IndexListNode_delete(IndexListNode *node) {
         if (temp->index.type == INDEX_TYPE_STRING) {
             safe_free(&temp->index.data);
         }
-        safe_free(&temp);
+        safe_free((void **) &temp);
     }
 }
 
@@ -267,7 +268,7 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
         while (list) {
             IndexListNode *temp = list;
             list = list->next;
-            safe_free(&temp);
+            safe_free((void **) &temp);
         }
 
         // 接着删除节点
@@ -281,7 +282,7 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
                 *root = *temp;
             }
 
-            safe_free(&temp);
+            safe_free((void **) &temp);
         } else {
             AVLNode *temp = AVL_minValueNode(root->right);
 
@@ -331,7 +332,6 @@ AVLNode *AVL_deleteNode(AVLNode *root, int64 hash) {
  * @return 返回操作后的AVL树的根节点
  */
 AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
-    IndexListNode *AVL_searchExact(AVLNode *root, int64 hash);
     IndexListNode *node1 = AVL_searchExact(root, hash);
 
     // 检查查找是否成功
@@ -345,7 +345,7 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
         if (temp) {
             node1->index = temp->index;
             node1->next = temp->next;
-            safe_free(&temp);
+            safe_free((void **) &temp);
             return root;
         } else {
             return AVL_deleteNode(root, hash);
@@ -356,7 +356,7 @@ AVLNode *AVL_deleteNodeById(AVLNode *root, int64 hash, int64 delId) {
     for (IndexListNode *prev = node1, *n = node1->next; n != NULL; prev = n, n = n->next) {
         if ((int64) n->index.data == delId) {
             prev->next = n->next;
-            safe_free(&n);
+            safe_free((void **) &n);
             break;
         }
     }

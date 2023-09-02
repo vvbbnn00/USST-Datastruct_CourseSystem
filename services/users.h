@@ -15,6 +15,7 @@
 #include "../database/users.h"
 #include "../libs/hmacsha256.h"
 #include "ui.h"
+#include "../libs/link_list_object.h"
 
 User *GlobalUser = NULL;
 
@@ -23,7 +24,7 @@ User *GlobalUser = NULL;
  * @param c
  * @return 可用则返回1，不可用则返回0
  */
-char __inAvailableCharset(char c) {
+char inAvailableCharset(char c) {
     const char *available_char = "`~!@#$%^&*()_+-= []{}\\|;:'\",.<>?/";
     if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return 1;
     for (int i = 0; i < 33; i++) if (c == available_char[i]) return 1;
@@ -94,7 +95,7 @@ char *Serv_User_getPassword(char do_exit) {
             printf("\b \b");  //退格，打一个空格，再退格，实质上是用空格覆盖掉星号
             --i;
         } else {
-            if (__inAvailableCharset(c)) {
+            if (inAvailableCharset(c)) {
                 if (i >= 30) continue; // 限制密码长度
                 password[i++] = c;//将字符放入数组
                 printf("*");
@@ -158,7 +159,7 @@ int Serv_User_login(char status) {
         goto Login;
     }
     char *hashPasswd = calcHexHMACSHA256(password, SECRET_KEY);
-    safe_free(&password);
+    safe_free((void **) &password);
 
     // 调用数据库API，执行登录操作
     User *user = DB_getUserByEmpId(username);
@@ -173,8 +174,8 @@ int Serv_User_login(char status) {
         goto Login;
     }
 
-    safe_free(&username);
-    safe_free(&hashPasswd);
+    safe_free((void **) &username);
+    safe_free((void **) &hashPasswd);
 
     GlobalUser = user;
 
@@ -194,7 +195,7 @@ int Serv_User_login(char status) {
 /**
  * 执行修改密码操作
  */
-void Serv_changePassword() {
+void Serv_User_changePassword() {
     char *ori_password, *new_password, *new_password_repeat;
 
     Init:
@@ -233,9 +234,9 @@ void Serv_changePassword() {
 
     char *hashPasswd = calcHexHMACSHA256(ori_password, SECRET_KEY);
     char *hashNewPasswd = calcHexHMACSHA256(new_password, SECRET_KEY);
-    safe_free(&ori_password);
-    safe_free(&new_password);
-    safe_free(&new_password_repeat);
+    safe_free((void **) &ori_password);
+    safe_free((void **) &new_password);
+    safe_free((void **) &new_password_repeat);
     if (strcmp(hashPasswd, GlobalUser->passwd) != 0) {
         printf("[系统提示] 修改密码失败：原密码不正确（按任意键重新输入）\n");
         _getch();
@@ -248,7 +249,7 @@ void Serv_changePassword() {
         goto Init;
     }
 
-    safe_free(&hashPasswd);
+    safe_free((void **) &hashPasswd);
     strcpy(GlobalUser->passwd, hashNewPasswd);
     DB_updateUser(GlobalUser);
 
@@ -298,7 +299,7 @@ User *addUser() {
     goto Return;
 
     CancelAdd:  // 取消添加
-    safe_free(&user);
+    safe_free((void **) &user);
     user = NULL;
 
     Return:  // 返回数据
@@ -422,7 +423,6 @@ void editUser(User *_user) {
             getch();
             goto GC_COLLECT;
         }
-            break;
         case 27:
             goto GC_COLLECT;
         default:
@@ -431,18 +431,18 @@ void editUser(User *_user) {
     goto EditCourse_GetKey;
 
     GC_COLLECT:
-    if (_user == NULL) safe_free(&user);
+    if (_user == NULL) safe_free((void **) &user);
 }
 
 
 /**
  * 输出全体用户信息
  */
-void printAllUsers() {
+void Serv_User_printAllUsers() {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     char search_kw[36] = "";
-    int total, page = 1, max_page, page_size = 15, current_total, cnt = 0;
+    int total, page = 1, max_page, page_size = 15, current_total, cnt;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
     LinkList_Object *user_data_list = NULL;
@@ -614,7 +614,7 @@ void printAllUsers() {
 
     GC_Collect:
     linkListObject_Delete(user_data_list, 1);
-    safe_free(&user_data_list);
+    safe_free((void **) &user_data_list);
     user_data_list = NULL;
 }
 

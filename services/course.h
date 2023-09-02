@@ -20,12 +20,19 @@
 
 
 User *GlobalUser;
+void Serv_Course_editCourse(Course *_course);
+char *Serv_Course_printSchedule(int schedule[7][13]);
+void Serv_Course_printCourseData(Course *selected_course);
+void Serv_Course_printStudentList(Course *courseData);
+void Serv_Course_importStuCourseData();
+
+
 const char *NUMBER_CAPITAL[10] = {"零", "一", "二", "三", "四", "五", "六", "日", "八", "九"};
 const char *LECTURE_TYPE[4] = {"必修", "选修", "公选", "辅修"};
 
 
 // 用于传递一个完整的数组，获取后再使用memcpy传递给course的schedule
-typedef struct schedule_ {
+typedef struct {
     int schedule[7][13];
 } Schedule;
 
@@ -45,27 +52,13 @@ struct teacherCourseSelection { // 学生选课管理结构体
 };
 
 
-extern void printStudentCourseSelection();
-
-extern void printStudentLectureTable();
-
-extern void printAllCourses(int scene);
-
-extern void editCourse(Course *_course);
-
-extern Schedule editSchedule(int schedule[7][13]);
-
-extern void importStuCourseData();
-
-void printStudentList(Course *courseData);
-
 /**
  * 获取课程状态
  *
  * @param status 课程状态
  * @return
  */
-char *__getCourseStatus(int status) {
+char *Serv_Course_getCourseStatus(int status) {
     switch (status) {
         case 0:
             return "可选";
@@ -85,7 +78,7 @@ char *__getCourseStatus(int status) {
  * @param schedule
  * @return
  */
-char *printSchedule(int schedule[7][13]) {
+char *Serv_Course_printSchedule(int schedule[7][13]) {
     char *final_str = (char *) calloc(2000, sizeof(char));
     if (final_str == NULL) return NULL;
     for (int i = 0; i < 6; i++) {
@@ -118,7 +111,7 @@ char *printSchedule(int schedule[7][13]) {
  * @param schedule
  * @return
  */
-int getTotalWeekHour(int schedule[][13]) {
+int Serv_Course_getTotalWeekHour(int schedule[][13]) {
     int ans = 0;
     for (int i = 0; i < 7; i++) {
         for (int j = 1; j <= 12; j++) {
@@ -135,21 +128,21 @@ int getTotalWeekHour(int schedule[][13]) {
  * 打印课程信息
  * @param selected_course
  */
-void printCourseData(Course *selected_course) {
+void Serv_Course_printCourseData(Course *selected_course) {
     printf("\n\t===== 课程信息·%s =====\n\n", selected_course->courseName);
     printf("\t课  程ID：%lld\n", selected_course->id);
     printf("\t课程名称：%s\n", selected_course->courseName);
     printf("\t课程简介：%s\n", selected_course->description);
     printf("\t课程性质：%s\n", LECTURE_TYPE[selected_course->type]);
     printf("\t授课周数：第%d周~第%d周\n", selected_course->weekStart, selected_course->weekEnd);
-    char *courseArrangeStr = printSchedule(selected_course->schedule);
+    char *courseArrangeStr = Serv_Course_printSchedule(selected_course->schedule);
     if (courseArrangeStr != NULL) {
         printf("\t授课安排：%s\n", courseArrangeStr);
-        safe_free(&courseArrangeStr);
+        safe_free((void **) &courseArrangeStr);
     }
     printf("\t授课教师：%s(UID:%lld)\n", selected_course->teacher->name, selected_course->teacherId);
     printf("\t课程学时：%d学时\n",
-           getTotalWeekHour(selected_course->schedule) * (selected_course->weekEnd - selected_course->weekStart + 1));
+           Serv_Course_getTotalWeekHour(selected_course->schedule) * (selected_course->weekEnd - selected_course->weekStart + 1));
     printf("\t课程学分：%.2f\n", selected_course->points);
 }
 
@@ -157,12 +150,12 @@ void printCourseData(Course *selected_course) {
 /**
  * 执行学生选课事宜
  */
-void printStudentCourseSelection() {
+void Serv_Course_printStudentCourseSelection() {
     system("chcp 936>nul & cls & MODE CON COLS=110 LINES=50");
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     char search_kw[36] = "";
-    double current_score = 0; // 本学期最多可选学分, 当前已选学分
+    double current_score; // 本学期最多可选学分, 当前已选学分
     int total, page = 1, max_page, page_size = 10, current_total, cnt;
 
     LinkList_Node *selectedRow = NULL; // 被选中的行
@@ -261,7 +254,7 @@ void printStudentCourseSelection() {
         }
 
         printf("[%4s]%3d/%-3d   %-35lld%-35s%-10.2f%-12s\n",
-               __getCourseStatus(tmp->status),
+               Serv_Course_getCourseStatus(tmp->status),
                tmp->course.currentMembers,
                tmp->course.maxMembers,
                tmp->course.id,
@@ -291,7 +284,7 @@ void printStudentCourseSelection() {
     struct studentCourseSelection *selected_selection = selectedRow->data;
     Course *selected_course = &selected_selection->course;
 
-    printCourseData(selected_course);
+    Serv_Course_printCourseData(selected_course);
     switch (selected_selection->status) {
         case 1: // 已选
             SetConsoleTextAttribute(windowHandle, 0x0e);
@@ -303,7 +296,7 @@ void printStudentCourseSelection() {
             break;
     }
     printf("\t状    态：%s[%d/%d人]%s%s%s%s\n",
-           __getCourseStatus(selected_selection->status),
+           Serv_Course_getCourseStatus(selected_selection->status),
            selected_course->currentMembers,
            selected_course->maxMembers,
            strlen(selected_selection->locked_reason) > 0 ? " - 不可选原因：" : "",
@@ -383,7 +376,6 @@ void printStudentCourseSelection() {
                            selected_selection->locked_reason);
                     break;
             }
-        After:
             getch();
             goto GetCourseAndDisplay;
         case 27:
@@ -395,7 +387,7 @@ void printStudentCourseSelection() {
 
     GC_Collect:
     linkListObject_Delete(course_data_list, 1);
-    safe_free(&course_data_list);
+    safe_free((void **) &course_data_list);
     course_data_list = NULL;
 }
 
@@ -405,7 +397,7 @@ void printStudentCourseSelection() {
  * @param _stream
  * @param scheduleList
  */
-void printTableToStream(FILE *_stream, LinkList_Object scheduleList[7][13]) {
+void Serv_Course_printTableToStream(FILE *_stream, LinkList_Object scheduleList[7][13]) {
     for (int week_num = 0; week_num < 7; week_num++) {
         char has_course = 0; // 当前星期是否有课
         fprintf(_stream, "[星期%s]\n\n", NUMBER_CAPITAL[week_num + 1]);
@@ -437,10 +429,9 @@ void printTableToStream(FILE *_stream, LinkList_Object scheduleList[7][13]) {
 /**
  * 输出学生成绩表，并展示于控制台
  */
-void printStudentScoreTable() {
+void Serv_Course_printStudentScoreTable() {
     system("chcp 936>nul & cls & MODE CON COLS=80 LINES=100"); // 这里行数一定要大，不然数据会被刷掉
 
-    int total = 0; // 总结果条数
     double score_total = 0; // 总学分
     LinkList_Object *scheduleList = linkListObject_Init(); // 解析后的课表数据放在这里，对应节次等信息[7]表示周一(0)至周日(6)，[13]表示第一节课(1)至第十二节课(12)
 
@@ -459,8 +450,6 @@ void printStudentScoreTable() {
 
         linkListObject_Append(scheduleList, selection);
     }
-
-    Refresh:
 
     system("cls");
     printf("\n");
@@ -515,10 +504,9 @@ void printStudentScoreTable() {
 /**
  * 输出学生课表，并展示于控制台
  */
-void printStudentLectureTable() {
+void Serv_Course_printStudentLectureTable() {
     system("chcp 936>nul & cls & MODE CON COLS=70 LINES=9001"); // 这里行数一定要大，不然数据会被刷掉
 
-    int total; // 总结果条数
     double score_total; // 总学分
     LinkList_Object scheduleList[7][13] = {0}; // 解析后的课表数据放在这里，对应节次等信息[7]表示周一(0)至周日(6)，[13]表示第一节课(1)至第十二节课(12)
 
@@ -557,7 +545,7 @@ void printStudentLectureTable() {
     UI_printHeader(58);
     printf("\n");
     UI_printInMiddle("======= 课程·当前学期课表 =======\n", 60);
-    printTableToStream(stdout, scheduleList);
+    Serv_Course_printTableToStream(stdout, scheduleList);
     printf("------------------------------------------------------------\n");
     printf("\n    [学生姓名] %s  [已选学分] %.2f\n",
            GlobalUser->name,
@@ -581,14 +569,14 @@ void printStudentLectureTable() {
             char file_name[len];
             memset(file_name, 0, len);
             sprintf(file_name, "%s的课表_%s.txt", name, timestamp);
-            safe_free(&timestamp);
+            safe_free((void **) &timestamp);
             FILE *file = fopen(file_name, "w");
             printf("[提示] 正在将课表导出至：%s...\n", file_name);
             if (file == NULL) {
                 printf("[导出失败] 无法创建文件\"%s\"，请检查是否有读写权限（按任意键继续）\n", file_name);
                 goto Refresh;
             }
-            printTableToStream(file, scheduleList);
+            Serv_Course_printTableToStream(file, scheduleList);
             fclose(file);
             printf("[导出成功] 课表已导出至：%s（按任意键继续）\n", file_name);
             getch();
@@ -611,7 +599,7 @@ void printStudentLectureTable() {
  * 输出全校课表（管理员版本）
  * @param scene 场景 0 - 查看全校课表（管理员可管理） 1 - 教师操作（只显示自己教的课程，可新增）
  */
-void printAllCourses(int scene) {
+void Serv_Course_printAllCourses(int scene) {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     char search_kw[36] = "";
@@ -713,7 +701,7 @@ void printAllCourses(int scene) {
                 printf("暂无课程，是否立即创建课程？(Y)");
                 int ch = getch();
                 if (ch == 'Y' || ch == 'y') {
-                    editCourse(NULL);
+                    Serv_Course_editCourse(NULL);
                 }
             } else {
                 UI_printErrorData("暂无课程");
@@ -722,7 +710,7 @@ void printAllCourses(int scene) {
         }
     }
 
-    printCourseData(selectedRow->data);
+    Serv_Course_printCourseData(selectedRow->data);
 
     printf("\n");
 
@@ -772,7 +760,7 @@ void printAllCourses(int scene) {
         case 'A':
         case 'a':
             if (GlobalUser->role != 2) break; // 权限判断
-            editCourse(NULL);
+            Serv_Course_editCourse(NULL);
             goto GetCourseAndDisplay;
         case 'D':
         case 'd': // 删除课程
@@ -802,11 +790,11 @@ void printAllCourses(int scene) {
         case 'p':
         case 'P':
             if (!(GlobalUser->role == 2 || (GlobalUser->role == 1 && scene == 1))) break; // 权限判断
-            printStudentList((Course *) selectedRow->data);
+            Serv_Course_printStudentList((Course *) selectedRow->data);
             goto GetCourseAndDisplay;
         case 13: // 编辑课程
             if (GlobalUser->role != 2) break; // 权限判断
-            editCourse((Course *) selectedRow->data);
+            Serv_Course_editCourse((Course *) selectedRow->data);
             goto GetCourseAndDisplay;
         case 27:
             goto GC_Collect;
@@ -817,7 +805,7 @@ void printAllCourses(int scene) {
 
     GC_Collect:
     linkListObject_Delete(course_data_list, 1);
-    safe_free(&course_data_list);
+    safe_free((void **) &course_data_list);
     course_data_list = NULL;
 }
 
@@ -828,7 +816,7 @@ void printAllCourses(int scene) {
  * @param course
  * @return
  */
-int exportStudentList(LinkList_Object *linkList, Course *course) {
+int Serv_Course_exportStudentList(LinkList_Object *linkList, Course *course) {
     time_t raw_time;
     time(&raw_time);
     char *timestamp = getFormatTimeString_("%Y%m%d%H%M%S", raw_time);
@@ -839,7 +827,7 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
     char file_name[len];
     memset(file_name, 0, len);
     sprintf(file_name, "%s(%lld)学生名单_%s.csv", title, course->id, timestamp);
-    safe_free(&timestamp);
+    safe_free((void **) &timestamp);
     FILE *file = fopen(file_name, "w");
     printf("[提示] 正在将学生名单导出至：%s...\n", file_name);
     if (file == NULL) {
@@ -878,7 +866,7 @@ int exportStudentList(LinkList_Object *linkList, Course *course) {
 /**
  * 教师/管理员打印学生名单
  */
-void printStudentList(Course *courseData) {
+void Serv_Course_printStudentList(Course *courseData) {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 
     int sort_method = 0; // 排序方法 0 - 默认排序 1 - 学分降序 2 - 学分升序
@@ -988,7 +976,7 @@ void printStudentList(Course *courseData) {
             printf("您是管理员，是否导入学生名单？(Y)");
             int ch = getch();
             if (ch == 'Y' || ch == 'y') {
-                importStuCourseData();
+                Serv_Course_importStuCourseData();
             }
         }
         goto Teacher_GC_Collect;
@@ -1023,13 +1011,13 @@ void printStudentList(Course *courseData) {
             break;
         case 'E':
         case 'e':
-            exportStudentList(student_list, courseData);
+            Serv_Course_exportStudentList(student_list, courseData);
             _getch();
             goto Teacher_Refresh;
         case 'I':
         case 'i': // 批量导入学生信息
             if (GlobalUser->role != 2) break; // 无法新增学生
-            importStuCourseData();
+            Serv_Course_importStuCourseData();
             goto Teacher_GetCourseAndDisplay;
         case 'G':
         case 'g': // 显示分段分数信息
@@ -1136,7 +1124,7 @@ void printStudentList(Course *courseData) {
                 }
 
                 printf("[退选成功] 用户 %s(%s) 已成功退选（按任意键继续）\n", user->name, user->empId);
-                safe_free(&ret);
+                safe_free((void **) &ret);
                 getch();
                 goto Teacher_GetCourseAndDisplay;
             }
@@ -1150,7 +1138,7 @@ void printStudentList(Course *courseData) {
 
     Teacher_GC_Collect:
     linkListObject_Delete(student_list, 1);
-    safe_free(&student_list);
+    safe_free((void **) &student_list);
     student_list = NULL;
 }
 
@@ -1159,7 +1147,7 @@ void printStudentList(Course *courseData) {
  * @param schedule
  * @return
  */
-Schedule editSchedule(int schedule[7][13]) {
+Schedule Serv_Course_editSchedule(int schedule[7][13]) {
     HANDLE windowHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     if (schedule == NULL) {
         schedule = alloca(sizeof(int[7][13]));
@@ -1237,7 +1225,7 @@ Schedule editSchedule(int schedule[7][13]) {
  * 新增课程
  * @return 取消则返回NULL，否则返回课程指针
  */
-Course *addCourse() {
+Course *Serv_Course_addCourse() {
     system("chcp 936>nul & cls & MODE CON COLS=75 LINES=55");
     printf("\n");
     UI_printHeader(69);
@@ -1300,13 +1288,13 @@ Course *addCourse() {
         goto CancelAdd;
     printf("[新增课程] 按任意键开始编辑授课安排\n");
     getch();
-    Schedule ret = editSchedule(NULL);
+    Schedule ret = Serv_Course_editSchedule(NULL);
     memcpy(course->schedule, ret.schedule, sizeof(int[7][13]));
 
     goto Return;
 
     CancelAdd:  // 取消添加
-    safe_free(&course);
+    safe_free((void **) &course);
     course = NULL;
 
     Return:  // 返回数据
@@ -1320,13 +1308,13 @@ Course *addCourse() {
  * @param _course 当为NULL时，新增课程，否则为修改课程
  * @return 课程指针
  */
-void editCourse(Course *_course) {
+void Serv_Course_editCourse(Course *_course) {
     // 如无课程信息，则新增课程
     int action = 0;
     Course *course = _course;
 
     if (course == NULL) {
-        course = addCourse();
+        course = Serv_Course_addCourse();
         action = 1;
         if (course == NULL) {
             return;
@@ -1350,10 +1338,10 @@ void editCourse(Course *_course) {
     UI_selfPlusPrint("\t\t上课地点      %s\n", &counter, selected, course->location); // 3
     UI_selfPlusPrint("\t\t课程性质      %s\n", &counter, selected, LECTURE_TYPE[course->type]); // 4
     UI_selfPlusPrint("\t\t授课周数      第%d周~第%d周\n", &counter, selected, course->weekStart, course->weekEnd); // 5
-    char *courseArrangeStr = printSchedule(course->schedule); // 6
+    char *courseArrangeStr = Serv_Course_printSchedule(course->schedule); // 6
     if (courseArrangeStr != NULL) {
         UI_selfPlusPrint("\t\t授课安排      %s\n", &counter, selected, courseArrangeStr);
-        safe_free(&courseArrangeStr);
+        safe_free((void **) &courseArrangeStr);
     }
     UI_selfPlusPrint("\t\t授课教师      %s(UID:%lld)\n", &counter, selected, course->teacher->name, // 7
                      course->teacherId);
@@ -1363,7 +1351,7 @@ void editCourse(Course *_course) {
     sprintf(floatStr, "%.2f", course->points);
     UI_selfPlusPrint("\t\t课程学分      %s\n", &counter, selected, floatStr);  // 9
     UI_selfPlusPrint("\t\t课程学时      %d学时\n", &counter, selected, // 10
-                     getTotalWeekHour(course->schedule) * (course->weekEnd - course->weekStart + 1));
+                     Serv_Course_getTotalWeekHour(course->schedule) * (course->weekEnd - course->weekStart + 1));
 
     printf("\n");
     UI_printInMiddle("<Enter>修改选中行 <Y>提交修改 <Esc>取消修改", 71);
@@ -1424,7 +1412,7 @@ void editCourse(Course *_course) {
                                               &course->weekEnd);
                     break;
                 case 6: {
-                    Schedule ret = editSchedule(course->schedule);
+                    Schedule ret = Serv_Course_editSchedule(course->schedule);
                     memcpy(course->schedule, ret.schedule, sizeof(int[7][13]));
                 }
                     break;
@@ -1476,7 +1464,6 @@ void editCourse(Course *_course) {
                 getch();
                 goto EditCourse_Refresh;
             }
-            break;
         case 27:
             goto GC_COLLECT;
         default:
@@ -1485,14 +1472,14 @@ void editCourse(Course *_course) {
     goto EditCourse_GetKey;
 
     GC_COLLECT:
-    if (_course == NULL) safe_free(&course);
+    if (_course == NULL) safe_free((void **) &course);
 }
 
 
 /**
  * 导入学生选课列表
  */
-void importStuCourseData() {
+void Serv_Course_importStuCourseData() {
 
     typedef struct _import_data {
         char uid[21], course_id[33];
@@ -1603,13 +1590,12 @@ void importStuCourseData() {
             printf("[导入成功] 共导入%d条数据（按任意键继续）\n", t_success);
             getch();
             goto Import_Refresh;
-            break;
         }
         case 'I': // 选择文件导入
         case 'i': {
             printf("[提示] 请在打开的对话框中选择文件，以完成进一步的操作...\n");
             char file_path[260] = {0};
-            if (openFileDialog(file_path, "TemplateFile\0*.csv\0", "请选择导入模板") == 0) {
+            if (UI_openFileDialog(file_path, "TemplateFile\0*.csv\0", "请选择导入模板") == 0) {
                 printf("[提示] 用户取消了文件选择（按任意键继续）\n");
                 getch();
                 goto Import_Refresh;
@@ -1635,14 +1621,13 @@ void importStuCourseData() {
                     linkListObject_Append(import_list, imp);
                     total++;
                 } else {
-                    safe_free(&imp);
+                    safe_free((void **) &imp);
                 }
             }
             fclose(fp);
             printf("[导入成功] 共导入%d条有效数据（按任意键继续）\n", total);
             getch();
             goto Import_Refresh;
-            break;
         }
         case 27:
             goto Import_GC_Collect;
@@ -1653,7 +1638,7 @@ void importStuCourseData() {
 
     Import_GC_Collect:
     linkListObject_Delete(import_list, 1);
-    safe_free(&import_list);
+    safe_free((void **) &import_list);
 }
 
 #endif

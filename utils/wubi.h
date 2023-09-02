@@ -44,7 +44,7 @@ void Wubi_Init() {
     }
 
     fclose(fp);
-    safe_free(&line);
+    safe_free((void **) &line);
     printf("[Wubi_Init] 五笔树初始化完成\n");
 
     AVL_saveToFile(wubiTree, "utils/wubi.avl");
@@ -62,7 +62,7 @@ char *Wubi_chn2wubi(char *chn) {
     while (chn[current] != '\0') {
         // 若是大写字母，则转换为小写字母，直接加入五笔字符串
         if (chn[current] >= 'A' && chn[current] <= 'Z') {
-            wubi[i++] = chn[current] + 32;
+            wubi[i++] = (char) (chn[current] + 32);
             current++;
             continue;
         }

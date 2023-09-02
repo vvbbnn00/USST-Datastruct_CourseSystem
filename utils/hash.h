@@ -28,7 +28,7 @@ char *Hash_PreprocessString(char *string) {
     do {
         i++;
         if (string[i] >= 'A' && string[i] <= 'Z') {
-            final[j++] = string[i] - 'A' + 'a';
+            final[j++] = (char) (string[i] - 'A' + 'a');
             continue;
         }
         if (string[i] >= 'a' && string[i] <= 'z') {
@@ -75,7 +75,7 @@ int64 Hash_String(char *string) {
         hash = hash * 36;
         i++;
     }
-    safe_free(&string);
+    safe_free((void **) &string);
 
     return hash;
 }
