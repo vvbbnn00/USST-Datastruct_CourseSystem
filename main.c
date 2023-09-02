@@ -13,8 +13,10 @@
 #include "services/users.h"
 #include <setjmp.h>
 
-
-void testAVL(){
+/**
+ * 用于测试AVL树的插入、删除是否正常
+ */
+void Main_testAVL(){
     system("cls & MODE CON COLS=55 LINES=9999");
 
     DB_registerUser("管理员", ADMIN_USERNAME, ADMIN_PASSWORD, 2, "11451419191");
@@ -72,7 +74,10 @@ void testAVL(){
 }
 
 
-void generateTestData() {
+/**
+ * 生成测试数据
+ */
+void Main_generateTestData() {
 
     int scheduleList[7][13] = {{1, 1},
                                {0, 0, 0, 1}};
@@ -155,7 +160,10 @@ void generateTestData() {
 }
 
 
-void printTrees() {
+/**
+ * 打印所有树
+ */
+void Main_printTrees() {
     system("cls & MODE CON COLS=55 LINES=9999");
 
     printf("user_name_Index:\n");
@@ -204,6 +212,10 @@ void printTrees() {
 }
 
 
+/**
+ * 主函数
+ * @return
+ */
 int main() {
     system("chcp 65001");  // 非中文语言环境下，设置GBK编码前需要先设置为UTF-8，否则会乱码
     system("chcp 936");
@@ -211,15 +223,15 @@ int main() {
     Wubi_Init();
     DB_Init();
 
-    // testAVL();
+    // Main_testAVL();
 
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 
-    generateTestData();
+    Main_generateTestData();
 
     // GlobalUser = DB_getUserByEmpId("2135060620");
 
-    printTrees();
+    Main_printTrees();
 
     Serv_User_login(status);
     // 打印主菜单
