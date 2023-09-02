@@ -24,7 +24,7 @@ User *GlobalUser = NULL;
  * @param c
  * @return 可用则返回1，不可用则返回0
  */
-char inAvailableCharset(char c) {
+char Serv_User_inner_inAvailableCharset(char c) {
     const char *available_char = "`~!@#$%^&*()_+-= []{}\\|;:'\",.<>?/";
     if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return 1;
     for (int i = 0; i < 33; i++) if (c == available_char[i]) return 1;
@@ -95,7 +95,7 @@ char *Serv_User_getPassword(char do_exit) {
             printf("\b \b");  //退格，打一个空格，再退格，实质上是用空格覆盖掉星号
             --i;
         } else {
-            if (inAvailableCharset(c)) {
+            if (Serv_User_inner_inAvailableCharset(c)) {
                 if (i >= 30) continue; // 限制密码长度
                 password[i++] = c;//将字符放入数组
                 printf("*");
@@ -262,7 +262,7 @@ void Serv_User_changePassword() {
  * 新增用户
  * @return 取消则返回NULL，否则返回用户指针
  */
-User *addUser() {
+User *Serv_User_addUser() {
     system("chcp 936>nul & cls & MODE CON COLS=75 LINES=55");
     printf("\n");
     UI_printHeader(69);
@@ -313,13 +313,13 @@ User *addUser() {
  * @param _user 当为NULL时，新增用户，否则为修改用户
  * @return
  */
-void editUser(User *_user) {
+void Serv_User_editUser(User *_user) {
     // 如无用户信息，则新增用户
     int action = 0;
     User *user = _user;
 
     if (user == NULL) {
-        user = addUser();
+        user = Serv_User_addUser();
         action = 1;
         if (user == NULL) {
             return;
@@ -575,7 +575,7 @@ void Serv_User_printAllUsers() {
             goto User_GetAndDisplay;
         case 'A':
         case 'a': // 新建用户
-            editUser(NULL);
+            Serv_User_editUser(NULL);
             goto User_GetAndDisplay;
         case 'D':
         case 'd': // 删除用户
@@ -603,7 +603,7 @@ void Serv_User_printAllUsers() {
             goto User_GetAndDisplay;
         }
         case 13: // 编辑用户
-            editUser(selectedRow->data);
+            Serv_User_editUser(selectedRow->data);
             goto User_GetAndDisplay;
         case 27:
             goto GC_Collect;

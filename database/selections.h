@@ -325,6 +325,12 @@ CourseSelection *DB_withdrawCourse(int64 userId, int64 courseId) {
 }
 
 
+/**
+ * 更新选课成绩
+ * @param selectionId
+ * @param score
+ * @return
+ */
 char DB_updateSelectionScore(int64 selectionId, int score) {
     CourseSelection *selection = DB_getSelectionById(selectionId);
     if (selection == NULL) {

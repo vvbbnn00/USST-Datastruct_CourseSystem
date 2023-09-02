@@ -262,6 +262,10 @@ void DB_deleteCourse(int64 courseId) {
     DB_setCountByIndex("course", count - 1);
 }
 
+/**
+ * 获取全部课程
+ * @return
+ */
 NodeList *DB_getAllCourses() {
     NodeList *result = NULL;
     AVL_inOrderTraverse(course_file_Index, &result);
