@@ -20,10 +20,15 @@
 
 
 User *GlobalUser;
+
 void Serv_Course_editCourse(Course *_course);
+
 char *Serv_Course_printSchedule(int schedule[7][13]);
+
 void Serv_Course_printCourseData(Course *selected_course);
+
 void Serv_Course_printStudentList(Course *courseData);
+
 void Serv_Course_importStuCourseData();
 
 
@@ -142,7 +147,8 @@ void Serv_Course_printCourseData(Course *selected_course) {
     }
     printf("\t授课教师：%s(UID:%lld)\n", selected_course->teacher->name, selected_course->teacherId);
     printf("\t课程学时：%d学时\n",
-           Serv_Course_getTotalWeekHour(selected_course->schedule) * (selected_course->weekEnd - selected_course->weekStart + 1));
+           Serv_Course_getTotalWeekHour(selected_course->schedule) *
+           (selected_course->weekEnd - selected_course->weekStart + 1));
     printf("\t课程学分：%.2f\n", selected_course->points);
 }
 
@@ -721,7 +727,6 @@ void Serv_Course_printAllCourses(int scene) {
     printf("\n");
 
 
-
     int keyboard_press;
 
     GetKey:
@@ -926,7 +931,8 @@ void Serv_Course_printStudentList(Course *courseData) {
     } else {
         printf("\t");
     }
-    printf(" <S>录入该学生成绩 <G>统计成绩分段信息\n  <E>导出学生名单 <Esc>返回主菜单\n\n");
+    printf(" <S>录入该学生成绩 <G>统计成绩分段信息%s  <E>导出学生名单 <Esc>返回主菜单\n\n",
+           GlobalUser->role == 2 ? "\n" : "");
 
     UI_printInMiddle("======= 课程·课程名单 =======\n", 101);
     printf("%-6s%-15s%-20s%-30s%-10s%-15s\n", "序号", "姓名", "学号", "选课时间", "成绩", "联系方式");

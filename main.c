@@ -52,7 +52,7 @@ void Main_testAVL(){
     AVL_printInOrder(user_file_Index);
     AVL_printPreOrder(user_file_Index);
 
-    printf("\n\n执行删除用户");
+    printf("\n\n执行删除用户\n\n");
 
     DB_deleteUser(8);
 
@@ -223,7 +223,7 @@ int main() {
     Wubi_Init();
     DB_Init();
 
-    // Main_testAVL();
+     Main_testAVL();
 
     char status = setjmp(GLOBAL_goto_login); // 全局标记点，用于退出登录或登录过期时跳转
 
